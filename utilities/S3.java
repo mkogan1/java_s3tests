@@ -134,4 +134,21 @@ public class S3 {
 	}
 	
 
+	public Bucket createKeys(String[] keys) {
+		
+		String prefix = getPrefix();
+		String bucket_name = getBucketName(prefix);
+		AmazonS3 svc = getCLI();
+		
+		Bucket bucket = svc.createBucket(bucket_name);
+		
+		for (String k : keys) {
+			
+			svc.putObject(bucket.getName(), k, k);
+			
+		}
+		
+		return bucket;		
+	}
+	
 }

@@ -16,5 +16,6 @@
 log/
 target/
 
-#TesNG
+#TestNG
 test-output/
+resources/
