@@ -11,10 +11,16 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.DeleteBucketRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListVersionsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.S3VersionSummary;
+import com.amazonaws.services.s3.model.VersionListing;
 import com.amazonaws.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -102,11 +108,63 @@ public class S3 {
 	    return new String(new char[count]).replace("\0", str);
 	}
 	
+	AmazonS3 svc = getCLI();
+	String prefix = getPrefix();
+	
+	public void tearDown() {
+		
+		java.util.List<Bucket> buckets = svc.listBuckets();
+		
+		for (Bucket b : buckets) {
+			
+			String bucket_name = b.getName();
+			
+			if (b.getName().startsWith(prefix)) {
+				
+				ObjectListing object_listing = svc.listObjects(b.getName());
+				while (true) {
+	                for (java.util.Iterator<S3ObjectSummary> iterator =
+	                        object_listing.getObjectSummaries().iterator();
+	                        iterator.hasNext();) {
+	                    S3ObjectSummary summary = (S3ObjectSummary)iterator.next();
+	                    svc.deleteObject(bucket_name, summary.getKey());
+	                }
+
+	                if (object_listing.isTruncated()) {
+	                    object_listing = svc.listNextBatchOfObjects(object_listing);
+	                } else {
+	                    break;
+	                }
+	            };
+	            
+	            VersionListing version_listing = svc.listVersions(
+	                    new ListVersionsRequest().withBucketName(bucket_name));
+	            while (true) {
+	                for (java.util.Iterator<S3VersionSummary> iterator =
+	                        version_listing.getVersionSummaries().iterator();
+	                        iterator.hasNext();) {
+	                    S3VersionSummary vs = (S3VersionSummary)iterator.next();
+	                    svc.deleteVersion(
+	          
+	                  bucket_name, vs.getKey(), vs.getVersionId());
+	                }
+
+	                if (version_listing.isTruncated()) {
+	                    version_listing = svc.listNextBatchOfVersions(
+	                            version_listing);
+	                } else {
+	                    break;
+	                }
+	            }
+			    svc.deleteBucket(new DeleteBucketRequest(b.getName()));
+			}
+		}
+	}
+	
 	public String[] EncryptionSseCustomerWrite(int file_size) {
 		
 		String prefix = getPrefix();
 		String bucket_name = getBucketName(prefix);
-		AmazonS3 svc = getCLI();
 		String key ="key1";
 		String data = repeat("testcontent", file_size);
 		

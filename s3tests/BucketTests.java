@@ -11,14 +11,15 @@ import com.amazonaws.services.s3.model.ObjectListing;
 
 public class BucketTests {
 	
+	//To provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
-	
 	String prefix = utils.getPrefix();
 
 	@AfterMethod
 	public  void tearDownAfterClass() throws Exception {
 		
+		utils.tearDown();	
 	}
 
 	@BeforeMethod
@@ -95,5 +96,6 @@ public class BucketTests {
 				.withBucketName(bucket2));
 		AssertJUnit.assertEquals(list.getObjectSummaries().isEmpty(), true);
 	}
+	
 	
 }

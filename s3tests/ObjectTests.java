@@ -7,6 +7,7 @@ import java.util.Arrays;
 import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -28,14 +29,17 @@ import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 public class ObjectTests {
 	
+	//To provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
-	
 	String prefix = utils.getPrefix();
 
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
+	@AfterMethod
+	public  void tearDownAfterClass() throws Exception {
+		
+		utils.tearDown();	
 	}
+
 
 	@BeforeMethod
 	public void setUp() throws Exception {
