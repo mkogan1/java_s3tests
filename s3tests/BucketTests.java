@@ -53,7 +53,7 @@ public class BucketTests {
 	}
 	
 	@Test 
-	public void testBucketDeleteNotEmpty() {
+	public void testBucketDeleteNonEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		svc.createBucket(new CreateBucketRequest(bucket_name));
@@ -95,6 +95,19 @@ public class BucketTests {
 		ObjectListing list = svc.listObjects(new ListObjectsRequest()
 				.withBucketName(bucket2));
 		AssertJUnit.assertEquals(list.getObjectSummaries().isEmpty(), true);
+	}
+	
+	@Test
+	public void testBucketNotExist() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		try {
+			
+			//any method on non existant bucket
+			svc.getBucketAcl(bucket_name);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+		}
 	}
 	
 	

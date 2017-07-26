@@ -16,6 +16,7 @@ import com.amazonaws.services.cloudsearchdomain.model.Bucket;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
@@ -29,7 +30,7 @@ import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 public class ObjectTests {
 	
-	//To provide singleton to these instances
+	//To do... provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
@@ -101,6 +102,109 @@ public class ObjectTests {
 	}
 	
 	@Test
+	public void testObjectCreateUnreadable() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		svc.putObject(bucket_name, "\\x0a", "bar");
+	}
+	
+	@Test
+	public void testObjectHeadZeroBytes() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key";
+		
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		svc.putObject(bucket_name, key, "");
+		
+		String result = svc.getObjectAsString(bucket_name, key);
+		Assert.assertEquals(result.length(), 0);
+		
+	}
+	
+	@Test
+	public void testObjectWriteCheckEtag() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key";
+		String Etag = "37b51d194a7513e45b56f6524f2d51f2";
+		
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		svc.putObject(bucket_name, key, "bar");
+		
+		S3Object resp = svc.getObject(new GetObjectRequest(bucket_name, key));
+		Assert.assertEquals(resp.getObjectMetadata().getETag(), Etag);
+		
+	}
+	
+	@Test
+	public void testObjectWriteCacheControl() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		String content = "echo lima golf";
+		String auth = "x07";
+		String cache_control = "public, max-age=14400";
+		
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+
+		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
+		InputStream is = new ByteArrayInputStream(contentBytes);
+		
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(contentBytes.length);
+		metadata.setHeader("Cache-Control", cache_control );
+		
+		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+		
+		S3Object resp = svc.getObject(new GetObjectRequest(bucket_name, key));
+		Assert.assertEquals(resp.getObjectMetadata().getCacheControl(), cache_control);
+		
+	}
+	
+	@Test
+	public void testObjectWriteReadUpdateReadDelete() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		String content = "echo lima golf";
+		
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		svc.putObject(bucket_name, key, content);
+		String got = svc.getObjectAsString(bucket_name, key);
+		Assert.assertEquals(got, content);
+		
+		//update
+		String newContent = "charlie echo";
+		svc.putObject(bucket_name, key, newContent);
+		got = svc.getObjectAsString(bucket_name, key);
+		Assert.assertEquals(got, newContent);
+		
+		svc.deleteObject(bucket_name, key);
+		try {
+			
+			got = svc.getObjectAsString(bucket_name, key);
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchKey");
+		}
+
+		
+	}
+	
+
+	@Test
+	public void testObjectSetGetMetadataNoneToGood() {
+		String myMeta ="meta1";
+		ObjectMetadata got = utils.getSetMetadata(myMeta);
+		Assert.assertEquals(got.getUserMetaDataOf(myMeta), myMeta);
+	}
+	
+	@Test
 	public void testObjectCopyBucketNotFound() {
 		
 		String bucket1 = utils.getBucketName(prefix);
@@ -136,27 +240,6 @@ public class ObjectTests {
 		
 	}
 	
-	@Test
-	public void testObjectWriteReadUpdateReadDelete() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		svc.putObject(bucket_name, key, "echo");
-		S3Object obj = svc.getObject(bucket_name, key);
-		
-		svc.putObject(bucket_name, key, "lima");
-		S3Object obj2 = svc.getObject(bucket_name, key);
-		
-		AssertJUnit.assertNotSame(obj.getObjectContent(), obj2.getObjectContent());
-		
-		svc.deleteObject(bucket_name, key);
-		ObjectListing list = svc.listObjects(new ListObjectsRequest()
-				.withBucketName(bucket_name));
-		AssertJUnit.assertEquals(list.getObjectSummaries().isEmpty(), true);
-		
-	}
 	
 	@Test
 	public void testObjectCreateBadContenttypevalid() {
@@ -1273,6 +1356,34 @@ public class ObjectTests {
         }
 		Assert.assertEquals(list, expected_keys);
 		
+	}
+	
+	@Test
+	public void testEncryptedTransfer1b() {
+		
+		String arr[] = utils.EncryptionSseCustomerWrite(1);
+		AssertJUnit.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	public void testEncryptedTransfer1kb() {
+		
+		String arr[] = utils.EncryptionSseCustomerWrite(1024);
+		AssertJUnit.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	public void testEncryptedTransfer1MB() {
+		
+		String arr[] = utils.EncryptionSseCustomerWrite(1024*1024);
+		AssertJUnit.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	public void testEncryptedTransfer13b() {
+		
+		String arr[] = utils.EncryptionSseCustomerWrite(13);
+		AssertJUnit.assertEquals(arr[0], arr[1]);
 	}
 	
 }

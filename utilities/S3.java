@@ -1,11 +1,20 @@
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.Random;
+import java.util.UUID;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
 import com.amazonaws.ClientConfiguration;
-import static java.util.stream.Collectors.joining;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.model.Stream;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -17,20 +26,14 @@ import com.amazonaws.services.s3.model.ListVersionsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
+import com.amazonaws.services.s3.model.SSECustomerKey;
 import com.amazonaws.services.s3.model.VersionListing;
 import com.amazonaws.util.StringUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.Random;
-import java.util.UUID;
+import sun.security.provider.SecureRandom;
 
 public class S3 {
 	
@@ -161,6 +164,18 @@ public class S3 {
 		}
 	}
 	
+	private static SecretKey generateSecretKey() {
+        try {
+            KeyGenerator generator = KeyGenerator.getInstance("AES");
+            generator.init(256);
+            return generator.generateKey();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+            return null;
+        }
+    }
+	
 	public String[] EncryptionSseCustomerWrite(int file_size) {
 		
 		String prefix = getPrefix();
@@ -170,10 +185,12 @@ public class S3 {
 		
 		svc.createBucket(bucket_name);	
 		
-		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		SecretKey secretKey = generateSecretKey();
+        SSECustomerKey sseKey = new SSECustomerKey(secretKey);
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data).withSSECustomerKey(sseKey);
 		ObjectMetadata objectMetadata = new ObjectMetadata();
 		objectMetadata.setContentLength(data.length());
-		objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
 		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
 		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "DWygnHRtgiJ77HCm+1rvHw==");
 		putRequest.setMetadata(objectMetadata);
@@ -194,10 +211,7 @@ public class S3 {
 
 	public Bucket createKeys(String[] keys) {
 		
-		String prefix = getPrefix();
 		String bucket_name = getBucketName(prefix);
-		AmazonS3 svc = getCLI();
-		
 		Bucket bucket = svc.createBucket(bucket_name);
 		
 		for (String k : keys) {
@@ -207,6 +221,26 @@ public class S3 {
 		}
 		
 		return bucket;		
+	}
+	
+	public ObjectMetadata getSetMetadata(String metadata) {
+		
+		String bucket_name = getBucketName(prefix);
+		String content = "testcontent";
+		String key = "key1";
+		
+		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
+		InputStream is = new ByteArrayInputStream(contentBytes);
+		
+		ObjectMetadata mdata = new ObjectMetadata();
+		mdata.setContentLength(contentBytes.length);
+		mdata.addUserMetadata("Mymeta", metadata);
+		
+		svc.putObject(new PutObjectRequest(bucket_name, key, is, mdata));
+		
+		S3Object resp = svc.getObject(new GetObjectRequest(bucket_name, key));
+		
+		return resp.getObjectMetadata();
 	}
 	
 }
