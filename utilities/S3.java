@@ -10,6 +10,8 @@ import java.util.UUID;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import org.testng.SkipException;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentials;
@@ -33,14 +35,21 @@ import com.amazonaws.services.s3.model.SSECustomerKey;
 import com.amazonaws.services.s3.model.VersionListing;
 import com.amazonaws.util.StringUtils;
 
-import sun.security.provider.SecureRandom;
-
 public class S3 {
+	
+	Properties prop = new Properties();
+	InputStream input = null;
+	
+	String endpoint = prop.getProperty("endpoint");
+	String accessKey = prop.getProperty("access_key");
+	String secretKey = prop.getProperty("access_secret");
+	String prefix = prop.getProperty("bucket_prefix");
+	Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
+	
+	AmazonS3 svc = getCLI();
 	
 	public AmazonS3 getCLI() {
 		
-		Properties prop = new Properties();
-		InputStream input = null;
 		try {
 			input = new FileInputStream("config.properties");
 			try {
@@ -52,12 +61,6 @@ public class S3 {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		String endpoint = prop.getProperty("endpoint");
-		String accessKey = prop.getProperty("access_key");
-		String secretKey = prop.getProperty("access_secret");
-		String prefix = prop.getProperty("bucket_prefix");
-		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
 		
 		AmazonS3 svc = getConn(endpoint, accessKey, secretKey, issecure);
 
@@ -110,9 +113,6 @@ public class S3 {
 	    if(count <= 0) {return "";}
 	    return new String(new char[count]).replace("\0", str);
 	}
-	
-	AmazonS3 svc = getCLI();
-	String prefix = getPrefix();
 	
 	public void tearDown() {
 		
@@ -178,7 +178,6 @@ public class S3 {
 	
 	public String[] EncryptionSseCustomerWrite(int file_size) {
 		
-		String prefix = getPrefix();
 		String bucket_name = getBucketName(prefix);
 		String key ="key1";
 		String data = repeat("testcontent", file_size);
@@ -208,6 +207,38 @@ public class S3 {
 				
 	}
 	
+	public String[] EncryptionSseKMSCustomerWrite(int file_size, String keyId) {
+		
+		String bucket_name = getBucketName(prefix);
+		String key ="key1";
+		String data = repeat("testcontent", file_size);
+		
+		if (keyId == "") {
+			keyId = "testkey-1";
+		}
+		
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+		objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		
+		String rdata = svc.getObjectAsString(bucket_name, key);
+		
+		//trying to return two values
+		String arr[] = new String[2];
+        arr[0]= data;
+        arr[1] =  rdata;
+		
+		return arr;
+				
+	}
 
 	public Bucket createKeys(String[] keys) {
 		
@@ -243,4 +274,21 @@ public class S3 {
 		return resp.getObjectMetadata();
 	}
 	
+	public void checkSSL() {
+		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
+		if(issecure == false){
+			throw new SkipException("This operation needs HTTPs connection ");
+		}else{
+		System.out.println("I am in else condition");	
+		}
+	}
+	
+	public void checkKeyId() {
+		String kmskeyid = prop.getProperty("kmskeyid");
+		if(kmskeyid == null){
+			throw new SkipException("No keyId provided for this Operation");
+		}else{
+		System.out.println("I am in else condition");	
+		}
+	}
 }

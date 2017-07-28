@@ -26,6 +26,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.util.StringUtils;
+import com.sun.org.glassfish.gmbal.Description;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 public class ObjectTests {
@@ -1361,29 +1362,276 @@ public class ObjectTests {
 	@Test
 	public void testEncryptedTransfer1b() {
 		
+		utils.checkSSL();
 		String arr[] = utils.EncryptionSseCustomerWrite(1);
-		AssertJUnit.assertEquals(arr[0], arr[1]);
+		Assert.assertEquals(arr[0], arr[1]);
 	}
 	
 	@Test
 	public void testEncryptedTransfer1kb() {
 		
+		utils.checkSSL();
 		String arr[] = utils.EncryptionSseCustomerWrite(1024);
-		AssertJUnit.assertEquals(arr[0], arr[1]);
+		Assert.assertEquals(arr[0], arr[1]);
 	}
 	
 	@Test
 	public void testEncryptedTransfer1MB() {
 		
+		utils.checkSSL();
 		String arr[] = utils.EncryptionSseCustomerWrite(1024*1024);
-		AssertJUnit.assertEquals(arr[0], arr[1]);
+		Assert.assertEquals(arr[0], arr[1]);
 	}
 	
 	@Test
-	public void testEncryptedTransfer13b() {
+	@Description("Do not declare SSE-C but provide key and MD5. operation successfull, no encryption")
+	public void testEncryptionKeyNoSSEC() {
 		
-		String arr[] = utils.EncryptionSseCustomerWrite(13);
-		AssertJUnit.assertEquals(arr[0], arr[1]);
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "DWygnHRtgiJ77HCm+1rvHw==");
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		String rdata = svc.getObjectAsString(bucket_name, key);
+		Assert.assertEquals(rdata, data);
 	}
+	
+	@Test
+	@Description("declare SSE-C but do not provide key. operation fails")
+	public void testEncryptionKeySSECNoKey() {
+		
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		try {
+			
+			String rdata = svc.getObjectAsString(bucket_name, key);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
+		}
+	}
+	
+	@Test
+	@Description("write encrypted with SSE-C, but dont provide MD5. operation fails")
+	public void testEncryptionKeySSECNoMd5() {
+		
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		try {
+			
+			String rdata = svc.getObjectAsString(bucket_name, key);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
+		}
+	}
+	
+	@Test
+	@Description("write encrypted with SSE-C, but md5 is bad. operation fails")
+	public void testEncryptionKeySSECInvalidMd5() {
+		
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "AAAAAAAAAAAAAAAAAAAAAA==");
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		try {
+			
+			String rdata = svc.getObjectAsString(bucket_name, key);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
+		}
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 1 byte.success")
+	public void testSSEKMSTransfer1b() {
+		
+		utils.checkSSL();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(1, "");
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 1KB.success")
+	public void testSSEKMSTransfer1Kb() {
+		
+		utils.checkSSL();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(1024, "");
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 1MB.success")
+	public void testSSEKMSTransfer1MB() {
+		
+		utils.checkSSL();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(1024*1024, "");
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 13 bytes")
+	public void testSSEKMSTransfer13B() {
+		
+		utils.checkSSL();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(13, "");
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 13 bytes, sucess")
+	public void testSSEKMSPresent() {
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		String keyId = "testkey-1";
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+		objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		String rdata = svc.getObjectAsString(bucket_name, key);
+		Assert.assertEquals(rdata, data);
+	}
+	
+	@Test
+	@Description("declare SSE-KMS but do not provide key_id, operation fails")
+	public void testSSEKMSNoKey() {
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		try {
+			
+			String rdata = svc.getObjectAsString(bucket_name, key);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
+		}
+	}
+	
+	@Test
+	@Description("Do not declare SSE-KMS but provide key_id, operation sucessful no encryption")
+	public void testSSEKMSNotDeclared() {
+		utils.checkSSL();
+		String bucket_name = utils.getBucketName(prefix);
+		String key ="key1";
+		String data = utils.repeat("testcontent", 100);
+		String keyId = "testkey-1";
+		
+		svc.createBucket(bucket_name);	
+		
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(data.length());
+		objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
+		putRequest.setMetadata(objectMetadata);
+		svc.putObject(putRequest);
+		
+		String rdata = svc.getObjectAsString(bucket_name, key);
+		Assert.assertEquals(rdata, data);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 1 byte.success")
+	public void testSSEKMSBarbTransfer1b() {
+		
+		utils.checkSSL();
+		utils.checkKeyId();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(1, utils.prop.getProperty("kmskeyid"));
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 1KB.success")
+	public void testSSEKMSBarbTransfer1Kb() {
+		
+		utils.checkSSL();
+		utils.checkKeyId();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(1024, utils.prop.getProperty("kmskeyid"));
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 1MB.success")
+	public void testSSEKMSBarbTransfer1MB() {
+		
+		utils.checkSSL();
+		utils.checkKeyId();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(1024*1024, utils.prop.getProperty("kmskeyid"));
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
+	@Test
+	@Description("Test SSE-KMS encrypted transfer 13 bytes")
+	public void testSSEKMSBarbTransfer13B() {
+		
+		utils.checkSSL();
+		utils.checkKeyId();
+		String arr[] = utils.EncryptionSseKMSCustomerWrite(13, utils.prop.getProperty("kmskeyid"));
+		Assert.assertEquals(arr[0], arr[1]);
+	}
+	
 	
 }
