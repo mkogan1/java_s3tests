@@ -5,9 +5,13 @@ import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.sun.org.glassfish.gmbal.Description;
 
 public class BucketTests {
 	
@@ -103,12 +107,145 @@ public class BucketTests {
 		String bucket_name = utils.getBucketName(prefix);
 		try {
 			
-			//any method on non existant bucket
 			svc.getBucketAcl(bucket_name);
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
 	
+	@Test
+	@Description("create w/no content length, succeeds")
+	public void testBucketCreateContentlengthNone() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Content-Length", "");
+		svc.createBucket(bktRequest);
+	}
+	
+	@Test
+	@Description("create Empty content length, succeeds")
+	public void testBucketCreateContentlengthEmpty() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Content-Length", " ");
+		svc.createBucket(bktRequest);
+	}
+	
+	@Test
+	@Description("create Negative content length, succeeds")
+	public void testBucketCreateContentlengthNegative() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Content-Length", "-1");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
+	}
+	
+	@Test
+	@Description("create w/non-graphic content length, succeeds")
+	public void testBucketCreateContentlengthUnreadable() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Content-Length", "\\x07");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
+	}
+	
+	@Test
+	@Description("create w/expect 200, garbage but S3 succeeds!")
+	public void testBucketCreateBadExpectMismatch() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Expect", "200");
+		 svc.createBucket(bktRequest);
+	}
+	
+	@Test
+	@Description("create w/expect empty, garbage but S3 succeeds!")
+	public void testBucketCreateBadExpectEmpty() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Expect", "");
+		svc.createBucket(bktRequest);
+	}
+	
+	@Test
+	@Description("create w/expect empty, garbage but S3 succeeds!")
+	public void testBucketCreateBadExpectUnreadable() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Expect", "\\x07");
+		svc.createBucket(bktRequest);
+	}
+	
+	@Test
+	@Description("create w/non-graphic authorization, fails")
+	public void testBucketCreateBadAuthorizationUnreadable() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Authorization", "\\x07");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "AccessDenied");
+		}
+	}
+	
+	@Test
+	@Description("create Empty authorization, fails")
+	public void testBucketCreateBadAuthorizationEmpty() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Authorization", "");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "AccessDenied");
+		}
+	}
+	
+	@Test
+	@Description("create w/no authorization, fails")
+	public void testBucketCreateBadAuthorizationNone() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Authorization", " ");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "AccessDenied");
+		}
+	}
 	
 }
