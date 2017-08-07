@@ -37,14 +37,8 @@ import com.amazonaws.util.StringUtils;
 
 public class S3 {
 	
-	Properties prop = new Properties();
+	static Properties prop = new Properties();
 	InputStream input = null;
-	
-	String endpoint = prop.getProperty("endpoint");
-	String accessKey = prop.getProperty("access_key");
-	String secretKey = prop.getProperty("access_secret");
-	String prefix = prop.getProperty("bucket_prefix");
-	Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
 	
 	AmazonS3 svc = getCLI();
 	
@@ -62,7 +56,36 @@ public class S3 {
 			e.printStackTrace();
 		}
 		
+		String endpoint = prop.getProperty("endpoint");
+		String accessKey = prop.getProperty("access_key");
+		String secretKey = prop.getProperty("access_secret");
+		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
+		
 		AmazonS3 svc = getConn(endpoint, accessKey, secretKey, issecure);
+
+		return svc;
+	}
+	
+	public AmazonS3 getAWS4CLI() {
+		
+		try {
+			input = new FileInputStream("config.properties");
+			try {
+				prop.load(input);
+			} catch (IOException e) {
+				
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		String endpoint = prop.getProperty("endpoint");
+		String accessKey = prop.getProperty("access_key");
+		String secretKey = prop.getProperty("access_secret");
+		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
+		
+		AmazonS3 svc = getAWS4Conn(endpoint, accessKey, secretKey, issecure);
 
 		return svc;
 	}
@@ -100,6 +123,32 @@ public class S3 {
 		return s3client;
 	}
 	
+	@SuppressWarnings("deprecation")
+	public AmazonS3 getAWS4Conn(String endpoint,String accessKey, String secretKey,Boolean issecure) {
+		
+		ClientConfiguration clientConfig = new ClientConfiguration();
+		clientConfig.setSignerOverride("AWSS3V4SignerType");
+		AmazonS3ClientBuilder.standard().setEndpointConfiguration(
+				new AwsClientBuilder.EndpointConfiguration(endpoint, "mexico"));
+		
+		if (issecure){
+			clientConfig.setProtocol(Protocol.HTTP);
+		}else {
+			
+			clientConfig.setProtocol(Protocol.HTTPS);
+		}
+		
+		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+		@SuppressWarnings("deprecation")
+		AmazonS3 s3client = new AmazonS3Client(credentials, clientConfig); 
+
+		s3client.setEndpoint(endpoint);
+
+		s3client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+		
+		return s3client;
+	}
+	
 	public String getBucketName(String prefix) {
 		
 		Random rand = new Random(); 
@@ -109,6 +158,15 @@ public class S3 {
 		return prefix + randomStr + num;
 	}
 	
+	public String getBucketName() {
+		String prefix = prop.getProperty("bucket_prefix");
+		
+		Random rand = new Random(); 
+		int num = rand.nextInt(50);
+		String randomStr = UUID.randomUUID().toString();
+		
+		return prefix + randomStr + num;
+	}
 	public String repeat(String str, int count){
 	    if(count <= 0) {return "";}
 	    return new String(new char[count]).replace("\0", str);
@@ -117,6 +175,7 @@ public class S3 {
 	public void tearDown() {
 		
 		java.util.List<Bucket> buckets = svc.listBuckets();
+		String prefix = prop.getProperty("bucket_prefix");
 		
 		for (Bucket b : buckets) {
 			
@@ -178,6 +237,7 @@ public class S3 {
 	
 	public String[] EncryptionSseCustomerWrite(int file_size) {
 		
+		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
 		String key ="key1";
 		String data = repeat("testcontent", file_size);
@@ -209,6 +269,7 @@ public class S3 {
 	
 	public String[] EncryptionSseKMSCustomerWrite(int file_size, String keyId) {
 		
+		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
 		String key ="key1";
 		String data = repeat("testcontent", file_size);
@@ -242,6 +303,7 @@ public class S3 {
 
 	public Bucket createKeys(String[] keys) {
 		
+		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
 		Bucket bucket = svc.createBucket(bucket_name);
 		
@@ -256,6 +318,7 @@ public class S3 {
 	
 	public ObjectMetadata getSetMetadata(String metadata) {
 		
+		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
 		String content = "testcontent";
 		String key = "key1";

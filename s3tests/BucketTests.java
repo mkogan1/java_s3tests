@@ -15,7 +15,7 @@ import com.sun.org.glassfish.gmbal.Description;
 
 public class BucketTests {
 	
-	//To provide singleton to these instances
+	//To Do ... provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();

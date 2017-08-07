@@ -1,0 +1,21 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+repositories {
+    mavenCentral()
+
+}
+
+dependencies {
+    compile 'org.seleniumhq.selenium:selenium-server:2.44.0'
+    compile 'org.testng:testng:6.1.1'
+    compile 'org.testng:testng:6.1.1'
+}
+
+
+test {
+    useTestNG() {
+        suites 'testng.xml'
+
+    }
+}
