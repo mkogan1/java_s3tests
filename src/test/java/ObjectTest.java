@@ -1,4 +1,3 @@
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -26,10 +25,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.util.StringUtils;
-import com.sun.org.glassfish.gmbal.Description;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
-public class ObjectTests {
+public class ObjectTest {
 	
 	//To do... provide singleton to these instances
 	private static S3 utils =  new S3();
@@ -1384,7 +1381,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Do not declare SSE-C but provide key and MD5. operation successfull, no encryption")
+	//@Description("Do not declare SSE-C but provide key and MD5. operation successfull, no encryption")
 	public void testEncryptionKeyNoSSEC() {
 		
 		utils.checkSSL();
@@ -1407,7 +1404,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("declare SSE-C but do not provide key. operation fails")
+	//@Description("declare SSE-C but do not provide key. operation fails")
 	public void testEncryptionKeySSECNoKey() {
 		
 		utils.checkSSL();
@@ -1433,7 +1430,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("write encrypted with SSE-C, but dont provide MD5. operation fails")
+	//@Description("write encrypted with SSE-C, but dont provide MD5. operation fails")
 	public void testEncryptionKeySSECNoMd5() {
 		
 		utils.checkSSL();
@@ -1460,7 +1457,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("write encrypted with SSE-C, but md5 is bad. operation fails")
+	//@Description("write encrypted with SSE-C, but md5 is bad. operation fails")
 	public void testEncryptionKeySSECInvalidMd5() {
 		
 		utils.checkSSL();
@@ -1488,7 +1485,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 1 byte.success")
+	//@Description("Test SSE-KMS encrypted transfer 1 byte.success")
 	public void testSSEKMSTransfer1b() {
 		
 		utils.checkSSL();
@@ -1497,7 +1494,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 1KB.success")
+	//@Description("Test SSE-KMS encrypted transfer 1KB.success")
 	public void testSSEKMSTransfer1Kb() {
 		
 		utils.checkSSL();
@@ -1506,7 +1503,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 1MB.success")
+	//@Description("Test SSE-KMS encrypted transfer 1MB.success")
 	public void testSSEKMSTransfer1MB() {
 		
 		utils.checkSSL();
@@ -1515,7 +1512,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 13 bytes")
+	//@Description("Test SSE-KMS encrypted transfer 13 bytes")
 	public void testSSEKMSTransfer13B() {
 		
 		utils.checkSSL();
@@ -1524,7 +1521,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 13 bytes, sucess")
+	//@Description("Test SSE-KMS encrypted transfer 13 bytes, sucess")
 	public void testSSEKMSPresent() {
 		utils.checkSSL();
 		String bucket_name = utils.getBucketName(prefix);
@@ -1547,7 +1544,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("declare SSE-KMS but do not provide key_id, operation fails")
+	//@Description("declare SSE-KMS but do not provide key_id, operation fails")
 	public void testSSEKMSNoKey() {
 		utils.checkSSL();
 		String bucket_name = utils.getBucketName(prefix);
@@ -1572,7 +1569,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Do not declare SSE-KMS but provide key_id, operation sucessful no encryption")
+	//@Description("Do not declare SSE-KMS but provide key_id, operation sucessful no encryption")
 	public void testSSEKMSNotDeclared() {
 		utils.checkSSL();
 		String bucket_name = utils.getBucketName(prefix);
@@ -1594,7 +1591,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 1 byte.success")
+	//@Description("Test SSE-KMS encrypted transfer 1 byte.success")
 	public void testSSEKMSBarbTransfer1b() {
 		
 		utils.checkSSL();
@@ -1604,7 +1601,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 1KB.success")
+	//@Description("Test SSE-KMS encrypted transfer 1KB.success")
 	public void testSSEKMSBarbTransfer1Kb() {
 		
 		utils.checkSSL();
@@ -1614,7 +1611,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 1MB.success")
+	//@Description("Test SSE-KMS encrypted transfer 1MB.success")
 	public void testSSEKMSBarbTransfer1MB() {
 		
 		utils.checkSSL();
@@ -1624,7 +1621,7 @@ public class ObjectTests {
 	}
 	
 	@Test
-	@Description("Test SSE-KMS encrypted transfer 13 bytes")
+	//@Description("Test SSE-KMS encrypted transfer 13 bytes")
 	public void testSSEKMSBarbTransfer13B() {
 		
 		utils.checkSSL();

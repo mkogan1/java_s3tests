@@ -12,7 +12,6 @@ import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.util.StringUtils;
-import com.sun.org.glassfish.gmbal.Description;
 
 public class AWS4Test {
 	
@@ -31,7 +30,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/x-amz-date after 9999, fails")
+	//@Description("create w/x-amz-date after 9999, fails")
 	public void testObjectCreateBadamzDateAfterEndAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -56,7 +55,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/date after 9999, fails")
+	//@Description("create w/date after 9999, fails")
 	public void testObjectCreateBadDateAfterEndAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -81,7 +80,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/x-amz-date before epoch, fails")
+	//@Description("create w/x-amz-date before epoch, fails")
 	public void testObjectCreateBadamzDateBeforeEpochAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -106,7 +105,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/date before epoch, suceeds")
+	//@Description("create w/date before epoch, suceeds")
 	public void testObjectCreateBadDateBeforeEpochAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -127,7 +126,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/x-amz-date in future, fails")
+	//@Description("create w/x-amz-date in future, fails")
 	public void testObjectCreateBadAmzDateAfterTodayAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -152,7 +151,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/date in future, suceeds")
+	//@Description("create w/date in future, suceeds")
 	public void testObjectCreateBadDateAfterToday4AWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -174,7 +173,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/x-amz-date in the past, fails")
+	//@Description("create w/x-amz-date in the past, fails")
 	public void testObjectCreateBadAmzDateBeforeTodayAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -199,7 +198,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/date in past, suceeds")
+	//@Description("create w/date in past, suceeds")
 	public void testObjectCreateBadDateBeforeToday4AWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -221,7 +220,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/no x-amz-date, fails")
+	//@Description("create w/no x-amz-date, fails")
 	public void testObjectCreateBadAmzDateNoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -246,7 +245,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/no date, suceeds")
+	//@Description("create w/no date, suceeds")
 	public void testObjectCreateBadDateNoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -268,7 +267,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/non-graphic x-amz-date, fails")
+	//@Description("create w/non-graphic x-amz-date, fails")
 	public void testObjectCreateBadamzDateUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -293,7 +292,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/non-graphic date, fails")
+	//@Description("create w/non-graphic date, fails")
 	public void testObjectCreateBadDateUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -318,7 +317,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/empty x-amz-date, fails")
+	//@Description("create w/empty x-amz-date, fails")
 	public void testObjectCreateBadamzDateEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -343,7 +342,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/empty date, suceeds")
+	//@Description("create w/empty date, suceeds")
 	public void testObjectCreateBadDateEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -365,7 +364,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/invalid x-amz-date, fails")
+	//@Description("create w/invalid x-amz-date, fails")
 	public void testObjectCreateBadamzDateInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -390,7 +389,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/invalid date, suceeds")
+	//@Description("create w/invalid date, suceeds")
 	public void testObjectCreateBadDateInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -412,7 +411,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/no user agent, fails")
+	//@Description("create w/no user agent, fails")
 	public void testObjectCreateBadUANoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -437,7 +436,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/non-graphic user agent, fails")
+	//@Description("create w/non-graphic user agent, fails")
 	public void testObjectCreateBadUAUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -462,7 +461,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/empty user agent, fails")
+	//@Description("create w/empty user agent, fails")
 	public void testObjectCreateBadUAEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -487,7 +486,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/invalid authorization, fails")
+	//@Description("create w/invalid authorization, fails")
 	public void testObjectCreateBadAuthorizationInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -512,7 +511,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/incorrect authorization, fails")
+	//@Description("create w/incorrect authorization, fails")
 	public void testObjectCreateBadAuthorizationIncorrectAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -537,7 +536,7 @@ public class AWS4Test {
 	}
 	
 	@Test
-	@Description("create w/content length too short, fails")
+	//@Description("create w/content length too short, fails")
 	public void testObjectCreateBadContentlengthMismatchBelowAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -558,31 +557,6 @@ public class AWS4Test {
 		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
 		}catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
-	
-	@Test
-	@Description("create w/invalid MD5, fails")
-	public void testObjectCreateBadMd5InvalidGarbageAWS4() {
-		
-		String bucket_name = utils.getBucketName();
-		String key = "key1";
-		String content = "echo lima golf";
-		String value = "AWS4 HAHAHA";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-
-		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-		InputStream is = new ByteArrayInputStream(contentBytes);
-		
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(contentBytes.length);
-		metadata.setHeader("Content-MD5", value);
-		
-		try {
-		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
-		}catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidDigest");
 		}
 	}
 

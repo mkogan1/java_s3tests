@@ -16,10 +16,13 @@ The tests use the [AWS Java SDK](). The tests use TestNG framework.
 Clone the repository
 
 	git clone https://github.com/nanjekyejoannah/java_s3tests
+	cd java_s3tests
 
 ### Edit Configuration
 
-Edit the configuration with your connection details.
+	cp config.properties.sample config.properties
+
+The configuration file looks something like this:
 
 	bucket_prefix = joannah
 	
@@ -41,17 +44,23 @@ Edit the configuration with your connection details.
 The tests connect to the Ceph RGW ,therefore you shoud have started your RGW and use the credentials you get. Details on building Ceph and starting RGW can be found in the [ceph repository](https://github.com/ceph/ceph).
 
 
-### 1. Running the tests
-
-Change to the directory having the tests. 
-
-	cd s3tests
+### 0. Install Grandle
 	
-#### Install ant
++ Ubuntu
 
-Follow the procedures [here](https://www.linuxhelp.com/how-to-install-apache-ant-on-ubuntu/)
+	sudo add-apt-repository ppa:cwchien/gradle
+	sudo apt-get update
+	sudo apt-get install gradle
 
-Build and run the tests with Ant. 
++ Fedora
+	
 
-	ant test
+	
+#### 1. Build 
+
+	gradle build
+
+#### 2. Run the Tests
+
+	gradle test
 

@@ -1,21 +1,6 @@
-
-# Eclipse
-.classpath
-.project
-.settings/
-
-# Intellij
-.idea/
-*.iml
-*.iws
-
-# Mac
-.DS_Store
-
-# Maven
-log/
+.gradle/
+build/
 target/
-
-#TestNG
+lib/
 test-output/
-resources/
+

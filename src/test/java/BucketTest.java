@@ -11,9 +11,8 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.sun.org.glassfish.gmbal.Description;
 
-public class BucketTests {
+public class BucketTest {
 	
 	//To Do ... provide singleton to these instances
 	private static S3 utils =  new S3();
@@ -114,7 +113,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/no content length, succeeds")
+	//@Description("create w/no content length, succeeds")
 	public void testBucketCreateContentlengthNone() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -125,7 +124,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create Empty content length, succeeds")
+	//@Description("create Empty content length, succeeds")
 	public void testBucketCreateContentlengthEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -136,7 +135,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create Negative content length, succeeds")
+	//@Description("create Negative content length, succeeds")
 	public void testBucketCreateContentlengthNegative() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -152,7 +151,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/non-graphic content length, succeeds")
+	//@Description("create w/non-graphic content length, succeeds")
 	public void testBucketCreateContentlengthUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -168,7 +167,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/expect 200, garbage but S3 succeeds!")
+	//@Description("create w/expect 200, garbage but S3 succeeds!")
 	public void testBucketCreateBadExpectMismatch() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -179,7 +178,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/expect empty, garbage but S3 succeeds!")
+	//@Description("create w/expect empty, garbage but S3 succeeds!")
 	public void testBucketCreateBadExpectEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -190,7 +189,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/expect empty, garbage but S3 succeeds!")
+	//@Description("create w/expect empty, garbage but S3 succeeds!")
 	public void testBucketCreateBadExpectUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -201,7 +200,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/non-graphic authorization, fails")
+	//@Description("create w/non-graphic authorization, fails")
 	public void testBucketCreateBadAuthorizationUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -217,7 +216,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create Empty authorization, fails")
+	//@Description("create Empty authorization, fails")
 	public void testBucketCreateBadAuthorizationEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -233,7 +232,7 @@ public class BucketTests {
 	}
 	
 	@Test
-	@Description("create w/no authorization, fails")
+	//@Description("create w/no authorization, fails")
 	public void testBucketCreateBadAuthorizationNone() {
 		
 		String bucket_name = utils.getBucketName(prefix);
