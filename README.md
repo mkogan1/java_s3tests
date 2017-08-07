@@ -9,7 +9,7 @@ The tests only cover the REST interface.
 
 ### Setup
 
-The tests use the [AWS Java SDK](). The tests use TestNG framework.
+The tests use the [AWS Java SDK]() and  TestNG framework.
 
 ### Get the source code
 
@@ -46,14 +46,14 @@ The tests connect to the Ceph RGW ,therefore you shoud have started your RGW and
 
 ### 0. Install Grandle
 	
-+ Ubuntu
+Ubuntu
 
 	sudo add-apt-repository ppa:cwchien/gradle
 	sudo apt-get update
 	sudo apt-get install gradle
 
 + Fedora
-	
+
 
 	
 #### 1. Build 
