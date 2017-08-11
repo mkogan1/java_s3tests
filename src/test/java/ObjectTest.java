@@ -58,20 +58,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	public void testMultiObjectDelete() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		svc.putObject(bucket_name, "key1", "echo");
-		
-		svc.deleteObjects(new DeleteObjectsRequest(bucket_name));
-		ObjectListing list = svc.listObjects(new ListObjectsRequest()
-				.withBucketName(bucket_name));
-		AssertJUnit.assertEquals(list.getObjectSummaries().isEmpty(), true);
-	}
-	
-	@Test
 	public void testObjectReadNotExist() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -99,29 +85,6 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
-	public void testObjectCreateUnreadable() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		svc.putObject(bucket_name, "\\x0a", "bar");
-	}
-	
-	@Test
-	public void testObjectHeadZeroBytes() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		svc.putObject(bucket_name, key, "");
-		
-		String result = svc.getObjectAsString(bucket_name, key);
-		Assert.assertEquals(result.length(), 0);
-		
-	}
 	
 	@Test
 	public void testObjectWriteCheckEtag() {
@@ -597,33 +560,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	public void TestObjectCreateBadMd5Empty() {
-		
-		try {
-			
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String content = "echo lima golf";
-			String md5 = " ";
-				
-			svc.createBucket(new CreateBucketRequest(bucket_name));
-
-			byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-			InputStream is = new ByteArrayInputStream(contentBytes);
-				
-			ObjectMetadata metadata = new ObjectMetadata();
-			metadata.setContentLength(contentBytes.length);
-			metadata.setHeader("Content-MD5", md5);
-				
-			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
-			
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Requ]est");
-		}
-		
-	}
-	
-	@Test
 	public void testObjectCreateBadMd5Unreadable() {
 		
 		try {
@@ -674,31 +610,6 @@ public class ObjectTest {
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidDigest");
 		}
-		
-	}
-	
-	@Test
-	public void testObjectListDelimiterAlt() {
-		
-		String [] keys = {"bar", "baz", "cab", "foo"};
-		String delim = "a";
-		java.util.List<String> expected_prefixes = Arrays.asList("ba", "ca");
-		java.util.List<String> expected_keys = Arrays.asList("foo");
-		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
-		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
-        ListObjectsV2Result result = svc.listObjectsV2(req);
-        
-        Assert.assertEquals(result.getDelimiter(), delim);
-        
-        Assert.assertEquals(result.getCommonPrefixes(), expected_prefixes);
-        
-		Object[] k = new Object[] {};
-		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
-		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-			list.add(objectSummary.getKey());
-        }
-		Assert.assertEquals(list, expected_keys);
 		
 	}
 	
@@ -783,54 +694,6 @@ public class ObjectTest {
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidArgument");
 		}
-		
-	}
-	
-	@Test
-	public void testObjectListDelimiterEmpty() {
-		
-		String [] keys = {"bar", "baz", "cab", "foo"};
-		String delim = "";
-		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "cab", "foo");
-		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
-		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
-        ListObjectsV2Result result = svc.listObjectsV2(req);
-        
-        Assert.assertEquals(result.getDelimiter().isEmpty(), true);
-        
-        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
-        
-		Object[] k = new Object[] {};
-		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
-		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-			list.add(objectSummary.getKey());
-        }
-		Assert.assertEquals(list, expected_keys);
-		
-	}
-	
-	@Test
-	public void testObjectListDelimiterNone() {
-		
-		String [] keys = {"bar", "baz", "cab", "foo"};
-		String delim = "";
-		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "cab", "foo");
-		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
-		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
-        ListObjectsV2Result result = svc.listObjectsV2(req);
-        
-        Assert.assertEquals(result.getDelimiter().isEmpty(), true);
-        
-        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
-        
-		Object[] k = new Object[] {};
-		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
-		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-			list.add(objectSummary.getKey());
-        }
-		Assert.assertEquals(list, expected_keys);
 		
 	}
 	
@@ -1217,20 +1080,6 @@ public class ObjectTest {
 			list.add(objectSummary.getKey());
         }
 		Assert.assertEquals(list.isEmpty(), true);
-		
-	}
-	
-	@Test
-	public void testObjectListMarkerNone() {
-		
-		String [] keys = {"bar", "baz", "foo", "quxx"};
-		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
-		ListObjectsRequest listObjectsRequest = new ListObjectsRequest();
-		listObjectsRequest.setBucketName(bucket.getName());
-		ObjectListing result = svc.listObjects(listObjectsRequest); 
-
-        Assert.assertEquals(result.getMarker().isEmpty(), true);
 		
 	}
 	

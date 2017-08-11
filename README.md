@@ -64,3 +64,7 @@ Ubuntu
 
 	gradle test
 
+## ToDo
+
++ Make gradle obey my foldering rule.
+

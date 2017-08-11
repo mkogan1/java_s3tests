@@ -534,30 +534,5 @@ public class AWS4Test {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
-	
-	@Test
-	//@Description("create w/content length too short, fails")
-	public void testObjectCreateBadContentlengthMismatchBelowAWS4() {
-		
-		String bucket_name = utils.getBucketName();
-		String key = "key1";
-		String content = "echo lima golf";
-		long contlength = 2;
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-
-		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-		InputStream is = new ByteArrayInputStream(contentBytes);
-		
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(contentBytes.length);
-		metadata.setHeader("Content-Length", contlength);
-		
-		try {
-		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
-		}catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
 
 }
