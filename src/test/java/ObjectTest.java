@@ -157,14 +157,6 @@ public class ObjectTest {
 		
 	}
 	
-
-	@Test
-	public void testObjectSetGetMetadataNoneToGood() {
-		String myMeta ="meta1";
-		ObjectMetadata got = utils.getSetMetadata(myMeta);
-		Assert.assertEquals(got.getUserMetaDataOf(myMeta), myMeta);
-	}
-	
 	@Test
 	public void testObjectCopyBucketNotFound() {
 		
@@ -1061,29 +1053,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	public void testObjectListMaxkeysNegative() {
-		
-		//passes..wonder blandar
-		
-		String [] keys = {"bar", "baz", "foo", "quxx"};
-		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
-		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(-1);
-        ListObjectsV2Result result = svc.listObjectsV2(req);
-        
-        Assert.assertEquals(result.getMaxKeys(), -1);
-        Assert.assertEquals(result.isTruncated(), true);
-       
-		Object[] k = new Object[] {};
-		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
-		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-			list.add(objectSummary.getKey());
-        }
-		Assert.assertEquals(list.isEmpty(), true);
-		
-	}
-	
-	@Test
 	public void testObjectListMarkerEmpty() {
 		
 		String [] keys = {"bar", "baz", "foo", "quxx"};
@@ -1479,5 +1448,11 @@ public class ObjectTest {
 		Assert.assertEquals(arr[0], arr[1]);
 	}
 	
+//.......................................multipart uploads....................................................
+	@Test
+	public void testMultipartUploadEmpty() {
+		
+		
+	}	
 	
 }

@@ -25,7 +25,7 @@ dependencyManagement {
 dependencies {
 
 	compile 'com.amazonaws:aws-java-sdk-core:1.11.166'
-    compile 'com.amazonaws:aws-java-sdk:1.9.13'
+    compile 'com.amazonaws:aws-java-sdk:1.11.166'
     compile 'com.amazonaws:aws-java-sdk-s3:1.11.166'
     compile 'com.amazonaws:aws-java-sdk-sqs'
 
