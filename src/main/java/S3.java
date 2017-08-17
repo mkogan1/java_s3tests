@@ -1,9 +1,11 @@
-
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
@@ -13,6 +15,8 @@ import javax.crypto.SecretKey;
 
 import org.testng.SkipException;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentials;
@@ -22,9 +26,17 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.S3ClientOptions;
+import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
+import com.amazonaws.services.s3.model.CopyPartRequest;
+import com.amazonaws.services.s3.model.CopyPartResult;
 import com.amazonaws.services.s3.model.DeleteBucketRequest;
+import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListVersionsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -33,7 +45,11 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.SSECustomerKey;
+import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.VersionListing;
+import com.amazonaws.services.s3.transfer.Transfer;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.StringUtils;
 
 public class S3 {
@@ -354,5 +370,136 @@ public class S3 {
 		}else{
 		System.out.println("I am in else condition");	
 		}
+	}
+	
+	public <PartETag> CompleteMultipartUploadRequest multipartUploadLLAPI(AmazonS3 svc, String bucket, String key, long size, String filePath) {
+		
+		List<PartETag> partETags = new ArrayList<PartETag>();
+
+		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(bucket, key);
+		InitiateMultipartUploadResult initResponse = svc.initiateMultipartUpload(initRequest);
+
+		File file = new File(filePath);
+		long contentLength = file.length();
+		long partSize = size;
+
+		
+			
+		    long filePosition = 0;
+		    for (int i = 1; filePosition < contentLength; i++) {
+		    	
+		    	partSize = Math.min(partSize, (contentLength - filePosition));
+		    	
+		        // Create request to upload a part.
+		        UploadPartRequest uploadRequest = new UploadPartRequest()
+		            .withBucketName(bucket).withKey(key)
+		            .withUploadId(initResponse.getUploadId()).withPartNumber(i)
+		            .withFileOffset(filePosition)
+		            .withFile(file)
+		            .withPartSize(partSize);
+		        
+		        partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
+
+		        filePosition += partSize;
+		    }
+
+		    CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket, key, 
+		                                               initResponse.getUploadId(), 
+		                                               (List<com.amazonaws.services.s3.model.PartETag>) partETags);
+		    
+		    return compRequest;
+		    
+	}
+	
+	public CompleteMultipartUploadRequest multipartCopy(AmazonS3 svc,String dstbkt, String dstkey, String srcbkt, String srckey,long size) {
+		
+		List<CopyPartResult> copyResponses = new ArrayList<CopyPartResult>();
+
+		InitiateMultipartUploadRequest initiateRequest = new InitiateMultipartUploadRequest(dstbkt, dstkey);
+		        
+		InitiateMultipartUploadResult initResult = svc.initiateMultipartUpload(initiateRequest);
+
+		String uploadId = initResult.getUploadId();
+
+		
+			
+		    GetObjectMetadataRequest metadataRequest = new GetObjectMetadataRequest(srcbkt, srckey);
+
+		    ObjectMetadata metadataResult = svc.getObjectMetadata(metadataRequest);
+		    long objectSize = metadataResult.getContentLength(); 
+		    
+		    long partSize = size; 
+		    long bytePosition = 0;
+		    for (int i = 1; bytePosition < objectSize; i++)
+		    {
+		    	CopyPartRequest copyRequest = new CopyPartRequest()
+		           .withDestinationBucketName(dstbkt)
+		           .withDestinationKey(dstkey)
+		           .withSourceBucketName(srcbkt)
+		           .withSourceKey(srckey)
+		           .withUploadId(initResult.getUploadId())
+		           .withFirstByte(bytePosition)
+		           .withLastByte(bytePosition + partSize -1 >= objectSize ? objectSize - 1 : bytePosition + partSize - 1) 
+		           .withPartNumber(i);
+
+		        copyResponses.add(svc.copyPart(copyRequest));
+		        bytePosition += partSize;
+		    }
+		    CompleteMultipartUploadRequest copyRequest = new CompleteMultipartUploadRequest().withBucketName(dstbkt).withKey(dstkey).withUploadId(initResult.getUploadId());
+		    
+		    return copyRequest;
+	}
+	
+	public S3Object[] getbktContent(String src_bkt, String src_key, String dst_bkt, String dst_key) {
+			
+			GetObjectRequest rangeObjectsrc = new GetObjectRequest(src_bkt, src_key);
+	        rangeObjectsrc.setRange(0, 10);
+	        S3Object objectPortion = svc.getObject(rangeObjectsrc);
+	        
+	        GetObjectRequest rangeObjectdst = new GetObjectRequest(src_bkt, src_key);
+	        rangeObjectdst.setRange(0, 10);
+	        S3Object objectPortiondst = svc.getObject(rangeObjectdst);
+	        
+	        S3Object arr[] = new S3Object[2];
+	             arr[0]= objectPortion;
+	             arr[1] =  objectPortiondst;
+	      		
+	      		return arr;
+	      				
+			
+	}
+	
+	public Upload multipartUploadFileHLAPI(AmazonS3 svc,String bucket, String key, String filePath) { 
+        
+        @SuppressWarnings("deprecation")
+		TransferManager tm = new TransferManager(svc);  
+        Upload upload = tm.upload(bucket, key, new File(filePath));
+        try {
+			try {
+				upload.waitForCompletion();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} catch (AmazonClientException amazonClientException) {
+			
+			amazonClientException.printStackTrace();
+		}
+		
+        return upload;
+	}
+	
+	public Transfer multipartUploadDirectoryHLAPI(AmazonS3 svc, String bucket, String s3target, String directory) throws AmazonServiceException, AmazonClientException, InterruptedException { 
+        
+		@SuppressWarnings("deprecation")
+		TransferManager tm = new TransferManager(svc);
+		Transfer t = tm.uploadDirectory(bucket, s3target, new File(directory), false);
+	    try {
+	      t.waitForCompletion();
+	    } finally {
+	      tm.shutdownNow(false);
+	    }
+	    
+	    return t;
+		
 	}
 }
