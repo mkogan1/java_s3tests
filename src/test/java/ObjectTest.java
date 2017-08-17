@@ -26,7 +26,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.util.StringUtils;
 
-public class ObjectTests {
+public class ObjectTest {
 	
 	//To do... provide singleton to these instances
 	private static S3 utils =  new S3();
