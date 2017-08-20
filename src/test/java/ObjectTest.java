@@ -1,20 +1,20 @@
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.testng.Assert;
 import org.testng.AssertJUnit;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudsearchdomain.model.Bucket;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -26,7 +26,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.util.StringUtils;
 
-public class ObjectTest {
+public class ObjectTests {
 	
 	//To do... provide singleton to these instances
 	private static S3 utils =  new S3();
@@ -1449,104 +1449,121 @@ public class ObjectTest {
 	}
 	
 	//.......................................Get Object in Range....................................................
-	@Test
-	public void testRangedRequestEmptyObject() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		String content = " ";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		svc.putObject(new PutObjectRequest(bucket_name, key, content));
-		
-		try {
+			@Test
+			public void testRangedRequestEmptyObject() {
+				
+				String bucket_name = utils.getBucketName(prefix);
+				String key = "key1";
+				String content = " ";
+				
+				svc.createBucket(new CreateBucketRequest(bucket_name));
+				svc.putObject(bucket_name, key, content);
+				
+				try {
+					
+		            GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+		            request.withRange(40, 50);
+		            S3Object s3Object = svc.getObject(request);
+					
+				} catch (AmazonServiceException err) {
+					AssertJUnit.assertEquals(err.getErrorCode(), "InvalidRange");
+				}
+					
+					
+			}	
 			
-			GetObjectRequest rangeObjectRequest = new GetObjectRequest(bucket_name, key);
-            rangeObjectRequest.setRange(40, 50);
-            svc.getObject(rangeObjectRequest);
+			@Test
+			public void testRangedRequestInvalidRange() {
+				
+				String bucket_name = utils.getBucketName(prefix);
+				String key = "key1";
+				String content = "testcontent";
+				
+				svc.createBucket(new CreateBucketRequest(bucket_name));
+				svc.putObject(bucket_name, key, content);
+				
+				try {
+					
+		            GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+		            request.withRange(40, 50);
+		            S3Object s3Object = svc.getObject(request);
+					
+				} catch (AmazonServiceException err) {
+					AssertJUnit.assertEquals(err.getErrorCode(), "InvalidRange");
+				}
+					
+					
+			}
 			
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidRange");
-		}
+			@Test
+			public void testRangedReturnTrailingBytesResponseCode() throws IOException {
+				
+				String bucket_name = utils.getBucketName(prefix);
+				String key = "key1";
+				String content = "testcontent";
+				
+				svc.createBucket(new CreateBucketRequest(bucket_name));
+				svc.putObject(bucket_name, key, content);
+				
+				GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+	            request.withRange(4, 10);
+	            S3Object obj = svc.getObject(request);
+	            
+	            BufferedReader reader = new BufferedReader(new InputStreamReader(obj.getObjectContent()));
+	            while (true) {
+	            	String line = reader.readLine();
+	                if (line == null) break;
+	                String str = content.substring(4);
+	                Assert.assertEquals(line, str);
+	            }
+		        	
+			}
 			
+			@Test
+			public void testRangedSkipLeadingBytesResponseCode() throws IOException {
+				
+				String bucket_name = utils.getBucketName(prefix);
+				String key = "key1";
+				String content = "testcontent";
+				
+				svc.createBucket(new CreateBucketRequest(bucket_name));
+				svc.putObject(bucket_name, key, content);
+				
+				GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+	            request.withRange(4, 10);
+	            S3Object obj = svc.getObject(request);
+	            
+	            BufferedReader reader = new BufferedReader(new InputStreamReader(obj.getObjectContent()));
+	            while (true) {
+	            	String line = reader.readLine();
+	                if (line == null) break;
+	                String str = content.substring(4);
+	                Assert.assertEquals(line, str);
+	            }	
+			}
 			
-	}	
-	
-	@Test
-	public void testRangedRequestInvalidRange() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		String content = "testcontent";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		svc.putObject(new PutObjectRequest(bucket_name, key, content));
-		
-		try {
-			
-			GetObjectRequest rangeObjectRequest = new GetObjectRequest(bucket_name, key);
-            rangeObjectRequest.setRange(40, 50);
-            svc.getObject(rangeObjectRequest);
-			
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidRange");
-		}
-			
-			
-	}
-	
-	@Test
-	public void testRangedReturnTrailingBytesResponseCode() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		String content = "testcontent";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		svc.putObject(new PutObjectRequest(bucket_name, key, content));
-		
-		GetObjectRequest rangeObjectRequest = new GetObjectRequest(bucket_name, key);
-        rangeObjectRequest.setRange(4, 10);;
-        S3Object obj = svc.getObject(rangeObjectRequest);
-        
-        Assert.assertEquals(obj.getObjectMetadata().getContentRange(), 4);
-        Assert.assertEquals(obj.getObjectContent().toString(), content.substring(4, 10));	
-	}
-	
-	@Test
-	public void testRangedSkipLeadingBytesResponseCode() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		String content = "testcontent";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		svc.putObject(new PutObjectRequest(bucket_name, key, content));
-		
-		GetObjectRequest rangeObjectRequest = new GetObjectRequest(bucket_name, key);
-        rangeObjectRequest.setRange(4, 10);;
-        S3Object obj = svc.getObject(rangeObjectRequest);
-        
-        Assert.assertEquals(obj.getObjectMetadata().getContentRange(), 4);
-        Assert.assertEquals(obj.getObjectContent().toString(), content.substring(4, 10));	
-	}
-	
-	@Test
-	public void testRangedrequestResponseCode() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		String content = "testcontent";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		svc.putObject(new PutObjectRequest(bucket_name, key, content));
-		
-		GetObjectRequest rangeObjectRequest = new GetObjectRequest(bucket_name, key);
-        rangeObjectRequest.setRange(4, 7);;
-        S3Object obj = svc.getObject(rangeObjectRequest);
-        
-        Assert.assertEquals(obj.getObjectMetadata().getContentRange(), 4);
-        Assert.assertEquals(obj.getObjectContent().toString(), content.substring(4, 7));	
-	}
+			@Test
+			public void testRangedrequestResponseCode() throws IOException {
+				
+				String bucket_name = utils.getBucketName(prefix);
+				String key = "key1";
+				String content = "testcontent";
+				
+				svc.createBucket(new CreateBucketRequest(bucket_name));
+				svc.putObject(bucket_name, key, content);
+				
+				GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+	            request.withRange(4, 7);
+	            S3Object obj = svc.getObject(request);
+	            
+	            BufferedReader reader = new BufferedReader(new InputStreamReader(obj.getObjectContent()));
+	            while (true) {
+	            	String line = reader.readLine();
+	                if (line == null) break;
+	                String str = content.substring(4,8);
+	                Assert.assertEquals(line, str);
+	            }	
+					
+			}
 	
 }
