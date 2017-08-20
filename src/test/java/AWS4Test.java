@@ -552,4 +552,300 @@ public class AWS4Test {
 	}
 	
 	
+	@Test
+	public void testMultipartUploadMultipleSizesLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		
+		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024, filePath);
+		svc.completeMultipartUpload(resp);
+		
+		CompleteMultipartUploadRequest resp2 = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024 + 100 * 1024, filePath);
+		svc.completeMultipartUpload(resp2);
+		
+		CompleteMultipartUploadRequest resp3 = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024 + 600 * 1024, filePath);
+		svc.completeMultipartUpload(resp3);
+		
+		CompleteMultipartUploadRequest resp4 = utils.multipartUploadLLAPI(svc, bucket_name, key, 10 * 1024 * 1024 + 100 * 1024, filePath);
+		svc.completeMultipartUpload(resp4);
+		
+		CompleteMultipartUploadRequest resp5 = utils.multipartUploadLLAPI(svc, bucket_name, key, 10 * 1024 * 1024 + 600 * 1024, filePath);
+		svc.completeMultipartUpload(resp5);
+		
+		CompleteMultipartUploadRequest resp6 = utils.multipartUploadLLAPI(svc, bucket_name, key, 10 * 1024 * 1024, filePath);
+		svc.completeMultipartUpload(resp6);
+	}
+	
+	@Test
+	public void testMultipartUploadEmptyLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		long size = 0;
+		
+		try {
+			
+			CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
+			svc.completeMultipartUpload(resp);
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartUploadSmallLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		long size = 5242880;
+			
+		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
+		svc.completeMultipartUpload(resp);
+		
+	}
+	
+	@Test
+	public void testMultipartUploadIncorrectEtagLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";;
+		long size = 5242880;
+			
+		List<PartETag> partETags = new ArrayList<PartETag>();
+
+		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(bucket_name, key);
+		InitiateMultipartUploadResult initResponse = svc.initiateMultipartUpload(initRequest);
+
+		File file = new File(filePath);
+		long contentLength = file.length();
+		long partSize = size;
+		
+		long filePosition = 0;
+		for (int i = 1; filePosition < contentLength; i++) {
+		    	
+		   partSize = Math.min(partSize, (contentLength - filePosition));
+		   UploadPartRequest uploadRequest = new UploadPartRequest()
+				   .withBucketName(bucket_name).withKey(key)
+		           .withUploadId(initResponse.getUploadId()).withPartNumber(i)
+		           .withFileOffset(filePosition)
+		           .withFile(file)
+		           .withPartSize(partSize)
+		           ;
+		   svc.uploadPart(uploadRequest).setETag("ffffffffffffffffffffffffffffffff");
+		   partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
+
+		   filePosition += partSize;
+		}
+		
+		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket_name, key, 
+                initResponse.getUploadId(), 
+                (List<com.amazonaws.services.s3.model.PartETag>) partETags);
+
+		try {
+			
+			svc.completeMultipartUpload(compRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidPart");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartUploadIncorrectMissingPartLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		long size = 5242880;
+			
+		List<PartETag> partETags = new ArrayList<PartETag>();
+
+		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(bucket_name, key);
+		InitiateMultipartUploadResult initResponse = svc.initiateMultipartUpload(initRequest);
+
+		File file = new File(filePath);
+		long contentLength = file.length();
+		long partSize = size;
+		
+		long filePosition = 0;
+		for (int i = 1; filePosition < contentLength; i++) {
+		    	
+		   partSize = Math.min(partSize, (contentLength - filePosition));
+		   UploadPartRequest uploadRequest = new UploadPartRequest()
+				   .withBucketName(bucket_name).withKey(key)
+		           .withUploadId(initResponse.getUploadId()).withPartNumber(i)
+		           .withFileOffset(filePosition)
+		           .withFile(file)
+		           .withPartSize(partSize)
+		           ;
+		   svc.uploadPart(uploadRequest).setPartNumber(9999);
+		   partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
+
+		   filePosition += partSize;
+		}
+		
+		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket_name, key, 
+                initResponse.getUploadId(), 
+                (List<com.amazonaws.services.s3.model.PartETag>) partETags);
+
+		try {
+			
+			svc.completeMultipartUpload(compRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidPart");
+		}
+		
+	}
+	
+	
+	@Test
+	public void testAbortMultipartUploadNotFoundLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		long size = 5242880;
+		
+		try {
+			
+			svc.abortMultipartUpload( new AbortMultipartUploadRequest(bucket_name, key, "1"));
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchUpload");
+		}
+		
+	}
+	
+	@Test
+	public void testAbortMultipartUploadLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		long size = 5242880;
+		
+		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024, filePath);
+		svc.abortMultipartUpload( new AbortMultipartUploadRequest(bucket_name, key, resp.getUploadId()));
+		
+	}
+	
+	@Test
+	public void testMultipartUploadOverwriteExistingObjectLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		long size = 5242880;
+		
+		svc.putObject(bucket_name, key, "foo");
+		
+		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
+		svc.completeMultipartUpload(resp);
+		
+		Assert.assertNotEquals(svc.getObjectAsString(bucket_name, key), "foo");
+		
+	}
+	
+	@Test
+	public void testMultipartUploadFileTooSmallFileLLAPI() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/sample.txt";
+		long size = 5242880;
+			
+		try {
+			
+			CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
+			svc.completeMultipartUpload(resp);
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "EntityTooSmall");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartUploadFileHLAPIBigFile() {
+	
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/file.mpg";
+		
+		Upload upl = utils.multipartUploadFileHLAPI(svc, bucket_name, key, filePath );
+		
+		Assert.assertEquals(upl.isDone(), true);
+		
+	}
+	
+	@Test
+	public void testMultipartUploadFileHLAPISmallFile() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String filePath = "./data/sample.txt";
+		
+		Upload upl = utils.multipartUploadFileHLAPI(svc, bucket_name, key, filePath );
+		
+		Assert.assertEquals(upl.isDone(), true);
+		
+	}
+	
+	@Test
+	public void testMultipartUploadFileHLAPINonExistantBucket() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		
+		String filePath = "./data/sample.txt";
+		
+		try {
+			Upload upl = utils.multipartUploadFileHLAPI(svc, bucket_name, key, filePath );
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartUploadDirectoryHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		
+		String filePath = "./data/sample.txt";
+		String s3dir = prop.getProperty("s3dir");
+		
+		Transfer upl = utils.multipartUploadDirectoryHLAPI(svc, bucket_name, bucket_name, filePath);
+		
+		Assert.assertEquals(upl.isDone(), true);
+		
+	}
+	
 }
