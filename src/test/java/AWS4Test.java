@@ -1,5 +1,8 @@
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +20,27 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.UploadPartRequest;
+import com.amazonaws.services.s3.transfer.Copy;
+import com.amazonaws.services.s3.transfer.Download;
+import com.amazonaws.services.s3.transfer.MultipleFileDownload;
+import com.amazonaws.services.s3.transfer.MultipleFileUpload;
+import com.amazonaws.services.s3.transfer.PauseResult;
+import com.amazonaws.services.s3.transfer.PersistableDownload;
+import com.amazonaws.services.s3.transfer.PersistableTransfer;
+import com.amazonaws.services.s3.transfer.PersistableUpload;
 import com.amazonaws.services.s3.transfer.Transfer;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferProgress;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.StringUtils;
 
@@ -788,7 +805,44 @@ public class AWS4Test {
 	}
 	
 	@Test
-	public void testMultipartUploadFileHLAPIBigFile() {
+	public void testMultipartCopyMultipleSizesLLAPI() {
+		
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String dir = "./data";
+		String key = "key1";
+		
+		svc.createBucket(new CreateBucketRequest(src_bkt));
+		svc.createBucket(new CreateBucketRequest(dst_bkt));
+		
+		String filePath = "./data/file.mpg";
+		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath );
+		Assert.assertEquals(upl.isDone(), true);
+		
+		
+		CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 5 * 1024 * 1024);
+		svc.completeMultipartUpload(resp);
+		
+		CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 5 * 1024 * 1024 + 100 * 1024);
+		svc.completeMultipartUpload(resp2);
+		
+		CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 5 * 1024 * 1024 + 600 * 1024);
+		svc.completeMultipartUpload(resp3);
+		
+		CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 10 * 1024 * 1024 + 100 * 1024);
+		svc.completeMultipartUpload(resp4);
+		
+		CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 10 * 1024 * 1024 + 600 * 1024);
+		svc.completeMultipartUpload(resp);
+		
+		CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 10 * 1024 * 1024);
+		svc.completeMultipartUpload(resp6);
+		
+	}
+	
+	
+	@Test
+	public void testUploadFileHLAPIBigFile() {
 	
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -796,14 +850,14 @@ public class AWS4Test {
 		
 		String filePath = "./data/file.mpg";
 		
-		Upload upl = utils.multipartUploadFileHLAPI(svc, bucket_name, key, filePath );
+		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
 		
 		Assert.assertEquals(upl.isDone(), true);
 		
 	}
 	
 	@Test
-	public void testMultipartUploadFileHLAPISmallFile() {
+	public void testUploadFileHLAPISmallFile() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -811,14 +865,14 @@ public class AWS4Test {
 		
 		String filePath = "./data/sample.txt";
 		
-		Upload upl = utils.multipartUploadFileHLAPI(svc, bucket_name, key, filePath );
+		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
 		
 		Assert.assertEquals(upl.isDone(), true);
 		
 	}
 	
 	@Test
-	public void testMultipartUploadFileHLAPINonExistantBucket() {
+	public void testUploadFileHLAPINonExistantBucket() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -826,7 +880,7 @@ public class AWS4Test {
 		String filePath = "./data/sample.txt";
 		
 		try {
-			Upload upl = utils.multipartUploadFileHLAPI(svc, bucket_name, key, filePath );
+			Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -834,18 +888,331 @@ public class AWS4Test {
 	}
 	
 	@Test
-	public void testMultipartUploadDirectoryHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	public void testMultipartUploadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
+	
+		svc.createBucket(new CreateBucketRequest(bucket_name));
 		
-		String filePath = "./data/sample.txt";
-		String s3dir = prop.getProperty("s3dir");
+		String dir = "./data";
 		
-		Transfer upl = utils.multipartUploadDirectoryHLAPI(svc, bucket_name, bucket_name, filePath);
+		Transfer upl = utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
 		
 		Assert.assertEquals(upl.isDone(), true);
 		
 	}
+	
+	@Test
+	public void testMultipartUploadHLAPINonEXistantBucketAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		String dir = "./data";
+		
+		try {
+			
+			Transfer upl = utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
+			
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartUploadWithPauseAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		String dir = "./data/file.mpg";
+		String key = "key1";
+		
+		TransferManager tm = new TransferManager(svc);
+		Upload myUpload = tm.upload(bucket_name, key, new File(dir));
+		
+		//pause upload
+		long MB = 10;
+		TransferProgress progress = myUpload.getProgress();
+		while( progress.getBytesTransferred() < MB ) Thread.sleep(2000);
+		boolean forceCancel = true;
+		PauseResult<PersistableUpload> pauseResult = myUpload.tryPause(forceCancel);
+		Assert.assertEquals(pauseResult.getPauseStatus().isPaused(), true);
+		
+		//persist PersistableUpload info to a file
+		PersistableUpload persistableUpload = pauseResult.getInfoToResume();
+		File f = new File("resume-upload");
+		if( !f.exists() ) f.createNewFile();
+		FileOutputStream fos = new FileOutputStream(f);
+		persistableUpload.serialize(fos);
+		fos.close(); 
+		
+		// Resume upload
+		FileInputStream fis = new FileInputStream(new File("resume-upload"));
+		PersistableUpload persistableUpload1 = PersistableTransfer.deserializeFrom(fis);
+		tm.resumeUpload(persistableUpload1);
+		fis.close();
+		
+	}
+	
+	@Test
+	public void testMultipartCopyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String dir = "./data";
+		String key = "key1";
+		
+		svc.createBucket(new CreateBucketRequest(src_bkt));
+		svc.createBucket(new CreateBucketRequest(dst_bkt));
+		
+		String filePath = "./data/sample.txt";
+		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath );
+		Assert.assertEquals(upl.isDone(), true);
+		
+		Copy cpy = utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key );
+		Assert.assertEquals(cpy.isDone(), true);
+	}
+	
+	@Test
+	public void testMultipartCopyNoDSTBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String dir = "./data";
+		String key = "key1";
+		
+		svc.createBucket(new CreateBucketRequest(src_bkt));
+		
+		String filePath = "./data/sample.txt";
+		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath );
+		Assert.assertEquals(upl.isDone(), true);
+		
+		try {
+			
+			Copy cpy = utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key );
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartCopyNoSRCBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String dir = "./data";
+		String key = "key1";
+		
+		svc.createBucket(new CreateBucketRequest(dst_bkt));
+		
+		try {
+			
+			Copy cpy = utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key );
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
+		}
+	}
+	
+	@Test
+	public void testMultipartCopyNoSRCKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String dir = "./data";
+		String key = "key1";
+		
+		svc.createBucket(new CreateBucketRequest(src_bkt));
+		svc.createBucket(new CreateBucketRequest(dst_bkt));
+		
+		try {
+			
+			Copy cpy = utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key );
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
+		}
+	}
+	
+	@Test
+	public void testDownloadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		
+		String filePath = "./data/sample.txt";
+		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
+		Assert.assertEquals(upl.isDone(), true);
+		
+		Download download = utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+		Assert.assertEquals(download.isDone(), true);
+		
+	}
+	
+	@Test
+	public void testDownloadNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		String filePath = "./data/sample.txt";
+		
+		try {
+			
+			Download download = utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
+		}
+		
+	}
+	
+	@Test
+	public void testDownloadNoKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		
+		String filePath = "./data/sample.txt";
+		
+		try {
+			
+			Download download = utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
+		}
+		
+	}
+	
+	@Test
+	public void testMultipartDownloadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		String dstDir = "./downloads";
+		
+		String filePath = "./data/file.mpg";
+		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
+		Assert.assertEquals(upl.isDone(), true);
+		
+		MultipleFileDownload download = utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+		Assert.assertEquals(download.isDone(), true);
+		
+		File f = new File("./downloads/file.mpg");
+		Assert.assertEquals(f.exists(), true);
+	}
+	
+	@Test
+	public void testDownloadWithPauseHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		String filePath = "./data/file.mpg";
+		
+		TransferManager tm = new TransferManager(svc);
+		
+		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
+		Assert.assertEquals(upl.isDone(), true);
+		
+		Download myDownload = tm.download(bucket_name, key, new File(filePath));
+
+		long MB = 20;
+		TransferProgress progress = myDownload.getProgress();
+		while( progress.getBytesTransferred() < MB ) Thread.sleep(2000);
+
+		// Pause the download and create file to store download info
+		PersistableDownload persistableDownload = myDownload.pause();
+		File f = new File("resume-download");
+		if( !f.exists() ) f.createNewFile();
+		FileOutputStream fos = new FileOutputStream(f);
+		persistableDownload.serialize(fos);
+		fos.close();
+		
+		//resume download
+		FileInputStream fis = new FileInputStream(new File("resume-download"));
+		PersistableDownload persistDownload = PersistableTransfer.deserializeFrom(fis);
+		tm.resumeDownload(persistDownload);
+
+		fis.close();
+		
+		
+	}
+	
+	@Test
+	public void testMultipartDownloadNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		String key = "key1";
+		String dstDir = "./downloads";
+		
+		try {
+			
+			MultipleFileDownload download = utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+		}
+	}
+	
+	@Test
+	public void testMultipartDownloadNoKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		String dstDir = "./downloads";
+		
+		
+		try {
+			
+			MultipleFileDownload download = utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
+		}
+	}
+	
+	@Test
+	public void testUploadFileListHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		String dstDir = "./downloads";
+		
+		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+		Assert.assertEquals(upl.isDone(), true);
+		
+		ObjectListing listing = svc.listObjects( bucket_name);
+		List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+		while (listing.isTruncated()) {
+		   listing = svc.listNextBatchOfObjects (listing);
+		   summaries.addAll (listing.getObjectSummaries());
+		}
+		Assert.assertEquals(summaries.size(), 2);
+		
+	}
+	
+	@Test
+	public void testUploadFileListNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		String dstDir = "./downloads";
+		
+		try {
+			
+			MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+		}
+		
+	}
+		
+		
+		
 	
 }

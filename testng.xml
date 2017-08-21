@@ -7,6 +7,7 @@
 			<class name="AWS4Test" />
 			<class name="BucketTest" />
 			<class name="ObjectTest" />
+			<class name="HeaderTest" />
 		</classes>
   </test>
 
