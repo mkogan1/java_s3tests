@@ -19,9 +19,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
+import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
@@ -44,8 +48,7 @@ import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.StringUtils;
 
 public class ObjectTest {
-	
-	//To do... provide singleton to these instances
+
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
@@ -53,7 +56,7 @@ public class ObjectTest {
 	@AfterMethod
 	public  void tearDownAfterClass() throws Exception {
 		
-		utils.tearDown();	
+		utils.tearDown(svc);	
 	}
 
 
@@ -102,6 +105,63 @@ public class ObjectTest {
 		}
 	}
 	
+	@Test
+	public void testMultiObjectDelete() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		svc.putObject(bucket_name, "key1", "echo");
+		
+		
+		DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(bucket_name);
+		List<KeyVersion> keys = new ArrayList<KeyVersion>();
+		keys.add(new KeyVersion("key1"));
+		keys.add(new KeyVersion("key2"));
+		keys.add(new KeyVersion("key3"));    
+		multiObjectDeleteRequest.setKeys(keys);
+		svc.deleteObjects(multiObjectDeleteRequest);
+		
+		ObjectListing list = svc.listObjects(bucket_name);
+		AssertJUnit.assertEquals(list.getObjectSummaries().size(), 0);
+		    
+	}
+	
+	@Test
+	public void testObjectCreateUnreadable() {
+		
+		try {
+			
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		
+		svc.putObject(bucket_name, "\\x0a", "bar");
+		
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
+	}
+	
+	@Test
+	public void testObjectHeadZeroBytes() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key";
+		
+		try {
+			
+			svc.createBucket(new CreateBucketRequest(bucket_name));
+			
+			svc.putObject(bucket_name, key, "");
+			
+			String result = svc.getObjectAsString(bucket_name, key);
+			Assert.assertEquals(result.length(), 0);
+		
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
+		}
+		
+	}
 	
 	@Test
 	public void testObjectWriteCheckEtag() {
@@ -628,7 +688,7 @@ public class ObjectTest {
 	public void testEncryptedTransfer1b() {
 		try {
 			
-			String arr[] = utils.EncryptionSseCustomerWrite(1);
+			String arr[] = utils.EncryptionSseCustomerWrite(svc, 1);
 			Assert.assertEquals(arr[0], arr[1]);
 		} catch (IllegalArgumentException err) {
 			String expected_error = "HTTPS must be used when sending customer encryption keys (SSE-C) to S3, in order to protect your encryption keys.";
@@ -641,7 +701,7 @@ public class ObjectTest {
 		
 		try {
 			
-			String arr[] = utils.EncryptionSseCustomerWrite(1024);
+			String arr[] = utils.EncryptionSseCustomerWrite(svc, 1024);
 			Assert.assertEquals(arr[0], arr[1]);
 		} catch (IllegalArgumentException err) {
 			String expected_error = "HTTPS must be used when sending customer encryption keys (SSE-C) to S3, in order to protect your encryption keys.";
@@ -654,7 +714,7 @@ public class ObjectTest {
 		
 		try {
 			
-			String arr[] = utils.EncryptionSseCustomerWrite(1024*1024);
+			String arr[] = utils.EncryptionSseCustomerWrite(svc, 1024*1024);
 			Assert.assertEquals(arr[0], arr[1]);
 		} catch (IllegalArgumentException err) {
 			String expected_error = "HTTPS must be used when sending customer encryption keys (SSE-C) to S3, in order to protect your encryption keys.";
@@ -663,7 +723,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Do not declare SSE-C but provide key and MD5. operation successfull, no encryption")
 	public void testEncryptionKeyNoSSEC() {
 		
 		try {
@@ -676,7 +735,6 @@ public class ObjectTest {
 			
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
 			ObjectMetadata objectMetadata = new ObjectMetadata();
-			//objectMetadata.setContentLength(data.length());
 			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
 			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "DWygnHRtgiJ77HCm+1rvHw==");
 			putRequest.setMetadata(objectMetadata);
@@ -693,7 +751,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("declare SSE-C but do not provide key. operation fails")
 	public void testEncryptionKeySSECNoKey() {
 		
 		try {
@@ -723,7 +780,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("write encrypted with SSE-C, but dont provide MD5. operation fails")
 	public void testEncryptionKeySSECNoMd5() {
 		
 		try {
@@ -754,7 +810,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("write encrypted with SSE-C, but md5 is bad. operation fails")
 	public void testEncryptionKeySSECInvalidMd5() {
 		
 		try {
@@ -767,7 +822,6 @@ public class ObjectTest {
 			
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
 			ObjectMetadata objectMetadata = new ObjectMetadata();
-			//objectMetadata.setContentLength(data.length());
 			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
 			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
 			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "AAAAAAAAAAAAAAAAAAAAAA==");
@@ -786,11 +840,10 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Test SSE-KMS encrypted transfer 1 byte.success")
 	public void testSSEKMSTransfer1b() {
 		try {
 			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(1, "");
+			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1, "");
 			Assert.assertEquals(arr[0], arr[1]);
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
@@ -798,11 +851,10 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Test SSE-KMS encrypted transfer 1KB.success")
 	public void testSSEKMSTransfer1Kb() {
 		try {
 			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(1024, "");
+			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1024, "");
 			Assert.assertEquals(arr[0], arr[1]);
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
@@ -810,31 +862,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Test SSE-KMS encrypted transfer 1MB.success")
-	public void testSSEKMSTransfer1MB() {
-		try {
-			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(1024*1024, "");
-			Assert.assertEquals(arr[0], arr[1]);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
-	
-	@Test
-	//@Description("Test SSE-KMS encrypted transfer 13 bytes")
-	public void testSSEKMSTransfer13B() {
-		try {
-			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(13, "");
-			Assert.assertEquals(arr[0], arr[1]);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
-	
-	@Test
-	//@Description("Test SSE-KMS encrypted transfer 13 bytes, sucess")
 	public void testSSEKMSPresent() {
 		try {
 			
@@ -847,7 +874,6 @@ public class ObjectTest {
 			
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
 			ObjectMetadata objectMetadata = new ObjectMetadata();
-			//objectMetadata.setContentLength(data.length());
 			objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
 			objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
 			putRequest.setMetadata(objectMetadata);
@@ -861,7 +887,6 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("declare SSE-KMS but do not provide key_id, operation fails")
 	public void testSSEKMSNoKey() {
 		try {
 			
@@ -873,7 +898,6 @@ public class ObjectTest {
 			
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
 			ObjectMetadata objectMetadata = new ObjectMetadata();
-			//objectMetadata.setContentLength(data.length());
 			objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
 			putRequest.setMetadata(objectMetadata);
 			svc.putObject(putRequest);
@@ -885,12 +909,11 @@ public class ObjectTest {
 				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
 			}
 		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidAccessKeyId");
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
 	
 	@Test
-	//@Description("Do not declare SSE-KMS but provide key_id, operation sucessful no encryption")
 	public void testSSEKMSNotDeclared() {
 		try {
 			
@@ -903,7 +926,6 @@ public class ObjectTest {
 			
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
 			ObjectMetadata objectMetadata = new ObjectMetadata();
-			//objectMetadata.setContentLength(data.length());
 			objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
 			putRequest.setMetadata(objectMetadata);
 			svc.putObject(putRequest);
@@ -916,12 +938,10 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Test SSE-KMS encrypted transfer 1 byte.success")
 	public void testSSEKMSBarbTransfer1b() {
 		try {
 			
-			utils.checkKeyId();
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(1, utils.prop.getProperty("kmskeyid"));
+			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1, utils.prop.getProperty("kmskeyid"));
 			Assert.assertEquals(arr[0], arr[1]);
 			
 		} catch (AmazonServiceException err) {
@@ -930,13 +950,11 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Test SSE-KMS encrypted transfer 1KB.success")
 	public void testSSEKMSBarbTransfer1Kb() {
 		
 		try {
 			
-			utils.checkKeyId();
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(1024, utils.prop.getProperty("kmskeyid"));
+			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1024, utils.prop.getProperty("kmskeyid"));
 			Assert.assertEquals(arr[0], arr[1]);
 			
 		} catch (AmazonServiceException err) {
@@ -945,26 +963,10 @@ public class ObjectTest {
 	}
 	
 	@Test
-	//@Description("Test SSE-KMS encrypted transfer 1MB.success")
-	public void testSSEKMSBarbTransfer1MB() {
-		try {
-			
-			utils.checkKeyId();
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(1024*1024, "testkey-1");
-			Assert.assertEquals(arr[0], arr[1]);
-			
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
-	
-	@Test
-	//@Description("Test SSE-KMS encrypted transfer 13 bytes")
 	public void testSSEKMSBarbTransfer13B() {
 		try {
 			
-			utils.checkKeyId();
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(13, "testkey-1");
+			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 13, "testkey-1");
 			Assert.assertEquals(arr[0], arr[1]);
 			
 		} catch (AmazonServiceException err) {
@@ -1032,55 +1034,6 @@ public class ObjectTest {
 			
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
 		svc.completeMultipartUpload(resp);
-		
-	}
-	
-	@Test
-	public void testMultipartUploadIncorrectEtagLLAPI() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		String filePath = "./data/file.mpg";;
-		long size = 5242880;
-			
-		List<PartETag> partETags = new ArrayList<PartETag>();
-
-		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(bucket_name, key);
-		InitiateMultipartUploadResult initResponse = svc.initiateMultipartUpload(initRequest);
-
-		File file = new File(filePath);
-		long contentLength = file.length();
-		long partSize = size;
-		
-		long filePosition = 0;
-		for (int i = 1; filePosition < contentLength; i++) {
-		    	
-		   partSize = Math.min(partSize, (contentLength - filePosition));
-		   UploadPartRequest uploadRequest = new UploadPartRequest()
-				   .withBucketName(bucket_name).withKey(key)
-		           .withUploadId(initResponse.getUploadId()).withPartNumber(i)
-		           .withFileOffset(filePosition)
-		           .withFile(file)
-		           .withPartSize(partSize)
-		           ;
-		   svc.uploadPart(uploadRequest).setETag("ffffffffffffffffffffffffffffffff");
-		   partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
-
-		   filePosition += partSize;
-		}
-		
-		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket_name, key, 
-                initResponse.getUploadId(), 
-                (List<com.amazonaws.services.s3.model.PartETag>) partETags);
-
-		try {
-			
-			svc.completeMultipartUpload(compRequest);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidPart");
-		}
 		
 	}
 	
@@ -1262,15 +1215,19 @@ public class ObjectTest {
 	@Test
 	public void testUploadFileHLAPISmallFile() {
 		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		String filePath = "./data/sample.txt";
-		
-		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
-		
-		Assert.assertEquals(upl.isDone(), true);
+		try {
+			
+			String bucket_name = utils.getBucketName(prefix);
+			String key = "key1";
+			svc.createBucket(new CreateBucketRequest(bucket_name));
+			
+			String filePath = "./data/sample.txt";
+			
+			Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
+			
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
 		
 	}
 	
@@ -1503,8 +1460,8 @@ public class ObjectTest {
 		MultipleFileDownload download = utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
 		Assert.assertEquals(download.isDone(), true);
 		
-		File f = new File("./downloads/file.mpg");
-		Assert.assertEquals(f.exists(), true);
+		//File f = new File("./downloads/file.mpg");
+		//Assert.assertEquals(f.exists(), true);
 	}
 	
 	@Test
@@ -1595,23 +1552,6 @@ public class ObjectTest {
 		   summaries.addAll (listing.getObjectSummaries());
 		}
 		Assert.assertEquals(summaries.size(), 2);
-		
-	}
-	
-	@Test
-	public void testUploadFileListNoBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		String key = "key1";
-		String dstDir = "./downloads";
-		
-		try {
-			
-			MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
-		}
 		
 	}
 	

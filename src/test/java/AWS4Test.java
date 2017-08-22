@@ -46,7 +46,6 @@ import com.amazonaws.util.StringUtils;
 
 public class AWS4Test {
 	
-	//To Do... provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getAWS4CLI();
 	String prefix = utils.getPrefix();
@@ -55,7 +54,7 @@ public class AWS4Test {
 	@AfterMethod
 	public  void tearDownAfterClass() throws Exception {
 		
-		utils.tearDown();	
+		utils.tearDown(svc);	
 	}
 
 	@BeforeMethod
@@ -63,7 +62,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/x-amz-date after 9999, fails")
 	public void testObjectCreateBadamzDateAfterEndAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -88,7 +86,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/date after 9999, fails")
 	public void testObjectCreateBadDateAfterEndAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -113,7 +110,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/x-amz-date before epoch, fails")
 	public void testObjectCreateBadamzDateBeforeEpochAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -138,7 +134,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/date before epoch, suceeds")
 	public void testObjectCreateBadDateBeforeEpochAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -159,7 +154,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/x-amz-date in future, fails")
 	public void testObjectCreateBadAmzDateAfterTodayAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -184,7 +178,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/date in future, suceeds")
 	public void testObjectCreateBadDateAfterToday4AWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -206,7 +199,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/x-amz-date in the past, fails")
 	public void testObjectCreateBadAmzDateBeforeTodayAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -231,7 +223,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/date in past, suceeds")
 	public void testObjectCreateBadDateBeforeToday4AWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -253,7 +244,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/no x-amz-date, fails")
 	public void testObjectCreateBadAmzDateNoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -278,7 +268,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/no date, suceeds")
 	public void testObjectCreateBadDateNoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -300,7 +289,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/non-graphic x-amz-date, fails")
 	public void testObjectCreateBadamzDateUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -325,7 +313,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/non-graphic date, fails")
 	public void testObjectCreateBadDateUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -350,7 +337,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/empty x-amz-date, fails")
 	public void testObjectCreateBadamzDateEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -375,7 +361,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/empty date, suceeds")
 	public void testObjectCreateBadDateEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -397,7 +382,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/invalid x-amz-date, fails")
 	public void testObjectCreateBadamzDateInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -422,7 +406,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/invalid date, suceeds")
 	public void testObjectCreateBadDateInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -444,7 +427,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/no user agent, fails")
 	public void testObjectCreateBadUANoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -469,7 +451,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/non-graphic user agent, fails")
 	public void testObjectCreateBadUAUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -494,7 +475,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/empty user agent, fails")
 	public void testObjectCreateBadUAEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -519,7 +499,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/invalid authorization, fails")
 	public void testObjectCreateBadAuthorizationInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -544,7 +523,6 @@ public class AWS4Test {
 	}
 	
 	@Test
-	//@Description("create w/incorrect authorization, fails")
 	public void testObjectCreateBadAuthorizationIncorrectAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -565,6 +543,30 @@ public class AWS4Test {
 		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
 		}catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
+	}
+	
+	@Test
+	public void testObjectCreateBadMd5InvalidGarbageAWS4() {
+		
+		String bucket_name = utils.getBucketName();
+		String key = "key1";
+		String content = "echo lima golf";
+		String value = "AWS4 HAHAHA";
+		
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+
+		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
+		InputStream is = new ByteArrayInputStream(contentBytes);
+		
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(contentBytes.length);
+		metadata.setHeader("Content-MD5", value);
+		
+		try {
+		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidDigest");
 		}
 	}
 	
@@ -629,55 +631,6 @@ public class AWS4Test {
 			
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
 		svc.completeMultipartUpload(resp);
-		
-	}
-	
-	@Test
-	public void testMultipartUploadIncorrectEtagLLAPI() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		String filePath = "./data/file.mpg";;
-		long size = 5242880;
-			
-		List<PartETag> partETags = new ArrayList<PartETag>();
-
-		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(bucket_name, key);
-		InitiateMultipartUploadResult initResponse = svc.initiateMultipartUpload(initRequest);
-
-		File file = new File(filePath);
-		long contentLength = file.length();
-		long partSize = size;
-		
-		long filePosition = 0;
-		for (int i = 1; filePosition < contentLength; i++) {
-		    	
-		   partSize = Math.min(partSize, (contentLength - filePosition));
-		   UploadPartRequest uploadRequest = new UploadPartRequest()
-				   .withBucketName(bucket_name).withKey(key)
-		           .withUploadId(initResponse.getUploadId()).withPartNumber(i)
-		           .withFileOffset(filePosition)
-		           .withFile(file)
-		           .withPartSize(partSize)
-		           ;
-		   svc.uploadPart(uploadRequest).setETag("ffffffffffffffffffffffffffffffff");
-		   partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
-
-		   filePosition += partSize;
-		}
-		
-		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket_name, key, 
-                initResponse.getUploadId(), 
-                (List<com.amazonaws.services.s3.model.PartETag>) partETags);
-
-		try {
-			
-			svc.completeMultipartUpload(compRequest);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidPart");
-		}
 		
 	}
 	
@@ -833,7 +786,7 @@ public class AWS4Test {
 		svc.completeMultipartUpload(resp4);
 		
 		CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 10 * 1024 * 1024 + 600 * 1024);
-		svc.completeMultipartUpload(resp);
+		svc.completeMultipartUpload(resp5);
 		
 		CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key, 10 * 1024 * 1024);
 		svc.completeMultipartUpload(resp6);
@@ -859,15 +812,19 @@ public class AWS4Test {
 	@Test
 	public void testUploadFileHLAPISmallFile() {
 		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		String filePath = "./data/sample.txt";
-		
-		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
-		
-		Assert.assertEquals(upl.isDone(), true);
+		try {
+			
+			String bucket_name = utils.getBucketName(prefix);
+			String key = "key1";
+			svc.createBucket(new CreateBucketRequest(bucket_name));
+			
+			String filePath = "./data/sample.txt";
+			
+			Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
+			
+		}catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
 		
 	}
 	
@@ -1099,9 +1056,6 @@ public class AWS4Test {
 		
 		MultipleFileDownload download = utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
 		Assert.assertEquals(download.isDone(), true);
-		
-		File f = new File("./downloads/file.mpg");
-		Assert.assertEquals(f.exists(), true);
 	}
 	
 	@Test

@@ -52,9 +52,10 @@ Ubuntu
 	sudo apt-get update
 	sudo apt-get install gradle
 
-+ Fedora
-
-
+Fedora
+	
+	dnf update
+	dnf install gradle
 	
 #### 1. Build 
 
@@ -66,5 +67,6 @@ Ubuntu
 
 ## ToDo
 
-+ Make gradle obey my foldering rule.
++ Add Tests for my utility methods
++ make S3 class singleton for performance
 

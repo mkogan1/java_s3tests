@@ -196,7 +196,7 @@ public class S3 {
 	    return new String(new char[count]).replace("\0", str);
 	}
 	
-	public void tearDown() {
+	public void tearDown(AmazonS3 svc) {
 		
 		java.util.List<Bucket> buckets = svc.listBuckets();
 		String prefix = prop.getProperty("bucket_prefix");
@@ -259,7 +259,7 @@ public class S3 {
         }
     }
 	
-	public String[] EncryptionSseCustomerWrite(int file_size) {
+	public String[] EncryptionSseCustomerWrite(AmazonS3 svc, int file_size) {
 		
 		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
@@ -291,7 +291,7 @@ public class S3 {
 				
 	}
 	
-	public String[] EncryptionSseKMSCustomerWrite(int file_size, String keyId) {
+	public String[] EncryptionSseKMSCustomerWrite(AmazonS3 svc, int file_size, String keyId) {
 		
 		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
@@ -325,7 +325,7 @@ public class S3 {
 				
 	}
 
-	public Bucket createKeys(String[] keys) {
+	public Bucket createKeys(AmazonS3 svc, String[] keys) {
 		
 		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
@@ -340,13 +340,12 @@ public class S3 {
 		return bucket;		
 	}
 	
-	public ObjectMetadata getSetMetadata(String metadata) {
+	public ObjectMetadata getSetMetadata(AmazonS3 svc, String bucket_name, String metadata) {
 		
-		String prefix = prop.getProperty("bucket_prefix");
-		String bucket_name = getBucketName(prefix);
 		String content = "testcontent";
 		String key = "key1";
 		
+		svc.createBucket(bucket_name);
 		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
 		InputStream is = new ByteArrayInputStream(contentBytes);
 		
@@ -359,24 +358,6 @@ public class S3 {
 		S3Object resp = svc.getObject(new GetObjectRequest(bucket_name, key));
 		
 		return resp.getObjectMetadata();
-	}
-	
-	public void checkSSL() {
-		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
-		if(issecure == false){
-			throw new SkipException("This operation needs HTTPs connection ");
-		}else{
-		System.out.println("I am in else condition");	
-		}
-	}
-	
-	public void checkKeyId() {
-		String kmskeyid = prop.getProperty("kmskeyid");
-		if(kmskeyid == null){
-			throw new SkipException("No keyId provided for this Operation");
-		}else{
-		System.out.println("I am in else condition");	
-		}
 	}
 	
 	public <PartETag> CompleteMultipartUploadRequest multipartUploadLLAPI(AmazonS3 svc, String bucket, String key, long size, String filePath) {
@@ -534,25 +515,6 @@ public class S3 {
 	        return download;	
 	}
 	
-	public S3Object[] getbktContent(String src_bkt, String src_key, String dst_bkt, String dst_key) {
-			
-			GetObjectRequest rangeObjectsrc = new GetObjectRequest(src_bkt, src_key);
-	        rangeObjectsrc.setRange(0, 10);
-	        S3Object objectPortion = svc.getObject(rangeObjectsrc);
-	        
-	        GetObjectRequest rangeObjectdst = new GetObjectRequest(src_bkt, src_key);
-	        rangeObjectdst.setRange(0, 10);
-	        S3Object objectPortiondst = svc.getObject(rangeObjectdst);
-	        
-	        S3Object arr[] = new S3Object[2];
-	             arr[0]= objectPortion;
-	             arr[1] =  objectPortiondst;
-	      		
-	      		return arr;
-	      				
-			
-	}
-	
 	public Upload UploadFileHLAPI(AmazonS3 svc,String bucket, String key, String filePath) { 
         
         @SuppressWarnings("deprecation")
@@ -572,7 +534,7 @@ public class S3 {
         return upload;
 	}
 	
-	public MultipleFileUpload UploadFileListHLAPI(AmazonS3 svc,String bucket, String key) throws AmazonServiceException, AmazonClientException, InterruptedException { 
+	public MultipleFileUpload UploadFileListHLAPI(AmazonS3 svc, String bucket, String key) throws AmazonServiceException, AmazonClientException, InterruptedException { 
         
 	    ArrayList<File> files = new ArrayList<File>();
 	    files.add(new File("./data/file.mpg"));

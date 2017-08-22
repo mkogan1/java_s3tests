@@ -1,3 +1,6 @@
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
 import org.testng.AssertJUnit;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -11,10 +14,10 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.util.StringUtils;
 
 public class BucketTest {
 	
-	//To Do ... provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
@@ -22,7 +25,7 @@ public class BucketTest {
 	@AfterMethod
 	public  void tearDownAfterClass() throws Exception {
 		
-		utils.tearDown();	
+		utils.tearDown(svc);	
 	}
 
 	@BeforeMethod
@@ -144,5 +147,127 @@ public class BucketTest {
 		bktRequest.putCustomRequestHeader("Expect", "\\x07");
 		svc.createBucket(bktRequest);
 	}
+	
+
+	@Test
+	public void TestObjectCreateBadMd5Empty() {
+		
+		try {
+			
+			String bucket_name = utils.getBucketName(prefix);
+			String key = "key1";
+			String content = "echo lima golf";
+			String md5 = " ";
+				
+			svc.createBucket(new CreateBucketRequest(bucket_name));
+
+			byte[] contentBytes = content.getBytes(StringUtils.UTF8);
+			InputStream is = new ByteArrayInputStream(contentBytes);
+				
+			ObjectMetadata metadata = new ObjectMetadata();
+			metadata.setContentLength(contentBytes.length);
+			metadata.setHeader("Content-MD5", md5);
+				
+			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Requ]est");
+		}
+		
+	}
+
+	@Test
+	//@Description("create w/non-graphic content length, succeeds")
+	public void testBucketCreateContentlengthUnreadable() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Content-Length", "\\x07");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+	}
+
+	@Test
+	public void testBucketCreateContentlengthNone() {
+		try {
+			
+			String bucket_name = utils.getBucketName(prefix);
+			
+			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+			bktRequest.putCustomRequestHeader("Content-Length", "");
+			svc.createBucket(bktRequest);
+			
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+	}
+
+	@Test
+	public void testBucketCreateContentlengthEmpty() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		
+			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+			bktRequest.putCustomRequestHeader("Content-Length", " ");
+			svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+	}
+	
+	@Test
+	public void testBucketCreateBadAuthorizationUnreadable() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Authorization", "\\x07");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+	}
+
+	@Test
+	public void testBucketCreateBadAuthorizationEmpty() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Authorization", "");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+	}
+	
+	@Test
+	public void testBucketCreateBadAuthorizationNone() {
+		
+		String bucket_name = utils.getBucketName(prefix);
+		
+		try {
+			
+		CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
+		bktRequest.putCustomRequestHeader("Authorization", " ");
+		svc.createBucket(bktRequest);
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+	}
+	
+
 	
 }

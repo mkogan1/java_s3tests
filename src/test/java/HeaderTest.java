@@ -18,12 +18,12 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class HeaderTest {
 	
-	//To Do ... provide singleton to these instances
 	private static S3 utils =  new S3();
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
@@ -31,7 +31,7 @@ public class HeaderTest {
   @AfterMethod
 	public  void tearDownAfterClass() throws Exception {
 		
-		utils.tearDown();	
+		utils.tearDown(svc);	
 	}
 
 	@BeforeMethod
@@ -46,7 +46,7 @@ public class HeaderTest {
 		java.util.List<String> expected_prefixes = Arrays.asList("b%", "c%");
 		java.util.List<String> expected_keys = Arrays.asList("foo");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -70,7 +70,7 @@ public class HeaderTest {
 		String delim = " ";
         try {
         	
-    		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+    		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
     		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
             ListObjectsV2Result result = svc.listObjectsV2(req);
             
@@ -88,7 +88,7 @@ public class HeaderTest {
 		java.util.List<String> expected_prefixes = Arrays.asList("b.", "c.");
 		java.util.List<String> expected_keys = Arrays.asList("foo");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -112,7 +112,7 @@ public class HeaderTest {
 		String delim = "\\x0a";
         try {
         	
-    		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+    		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
     		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
             ListObjectsV2Result result = svc.listObjectsV2(req);
             
@@ -129,7 +129,7 @@ public class HeaderTest {
 		String delim = "/";
 		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "cab", "foo");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -153,7 +153,7 @@ public class HeaderTest {
 		String prefix = "foo/";
 		java.util.List<String> expected_keys = Arrays.asList("foo/bar", "foo/baz");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -177,7 +177,7 @@ public class HeaderTest {
 		String prefix = "ba";
 		java.util.List<String> expected_keys = Arrays.asList("bar", "baz");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -201,7 +201,7 @@ public class HeaderTest {
 		String prefix = "";
 		java.util.List<String> expected_keys = Arrays.asList("foo/bar", "foo/baz", "quux");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -223,7 +223,7 @@ public class HeaderTest {
 		String prefix = "";
 		java.util.List<String> expected_keys = Arrays.asList("foo/bar", "foo/baz", "quux");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -245,7 +245,7 @@ public class HeaderTest {
 		String prefix = "d";
 		java.util.List<String> expected_keys = Arrays.asList();
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -269,7 +269,7 @@ public class HeaderTest {
 		String prefix = "\\x0a";
 		java.util.List<String> expected_keys = Arrays.asList();
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -295,7 +295,7 @@ public class HeaderTest {
 		java.util.List<String> expected_keys = Arrays.asList("foo/bar");
 		java.util.List<String> expected_prefixes = Arrays.asList( "foo/baz/");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -322,7 +322,7 @@ public class HeaderTest {
 		java.util.List<String> expected_keys = Arrays.asList("bar");
 		java.util.List<String> expected_prefixes = Arrays.asList( "baza");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -347,7 +347,7 @@ public class HeaderTest {
 		String prefix = "d";
 		String delim = "/";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -373,7 +373,7 @@ public class HeaderTest {
 		String delim = "z";
 		java.util.List<String> expected_keys = Arrays.asList("b/a/c", "b/a/g", "b/a/r");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -398,7 +398,7 @@ public class HeaderTest {
 		String prefix = "y";
 		String delim = "z";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -417,6 +417,29 @@ public class HeaderTest {
 	}
 	
 	@Test
+	public void testObjectListMaxkeysNegative() {
+		
+		//passes..wonder blandar
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(-1);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getMaxKeys(), -1);
+        Assert.assertEquals(result.isTruncated(), true);
+       
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list.isEmpty(), true);
+		
+	}
+	
+	@Test
 	public void testObjectListMaxkeysOne() {
 		
 		String [] keys = {"bar", "baz", "foo", "quxx"};
@@ -424,7 +447,7 @@ public class HeaderTest {
 		
 		int max_keys = 1;
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(max_keys);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -447,7 +470,7 @@ public class HeaderTest {
 		
 		int max_keys = 0;
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(max_keys);
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -469,7 +492,7 @@ public class HeaderTest {
 		String [] keys = {"bar", "baz", "foo", "quxx"};
 		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "foo", "quxx");
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName());
         ListObjectsV2Result result = svc.listObjectsV2(req);
         
@@ -491,7 +514,7 @@ public class HeaderTest {
 		String [] keys = {"bar", "baz", "foo", "quxx"};
 		String marker = " ";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		
 		try {
 			
@@ -513,7 +536,7 @@ public class HeaderTest {
 		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "foo", "quxx");
 		String marker = "\\x0a";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		ListObjectsRequest req = new ListObjectsRequest();
 		req.setBucketName(bucket.getName());
 		req.setMarker(marker);
@@ -539,7 +562,7 @@ public class HeaderTest {
 		java.util.List<String> expected_keys = Arrays.asList("foo", "quxx");
 		String marker = "blah";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		ListObjectsRequest req = new ListObjectsRequest();
 		req.setBucketName(bucket.getName());
 		req.setMarker(marker);
@@ -562,7 +585,7 @@ public class HeaderTest {
 		String [] keys = {"bar", "baz", "foo", "quxx"};
 		String marker = "zzz";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		ListObjectsRequest req = new ListObjectsRequest();
 		req.setBucketName(bucket.getName());
 		req.setMarker(marker);
@@ -588,7 +611,7 @@ public class HeaderTest {
 		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "foo", "quxx");
 		String marker = "aaa";
 		
-		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(keys);
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		ListObjectsRequest req = new ListObjectsRequest();
 		req.setBucketName(bucket.getName());
 		req.setMarker(marker);
@@ -725,7 +748,4 @@ public class HeaderTest {
 				
 		}
 		
-	
-	
-	
 }
