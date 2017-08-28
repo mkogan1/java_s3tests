@@ -58,6 +58,19 @@ import com.amazonaws.util.StringUtils;
 
 public class S3 {
 	
+	private static S3 instance = null;
+	
+	protected S3() {
+	      
+	}
+	
+	public static S3 getInstance() {
+	  if(instance == null) {
+	         instance = new S3();
+	   }
+	   return instance;
+	}
+	
 	static Properties prop = new Properties();
 	InputStream input = null;
 	
@@ -199,7 +212,7 @@ public class S3 {
 	public void tearDown(AmazonS3 svc) {
 		
 		java.util.List<Bucket> buckets = svc.listBuckets();
-		String prefix = prop.getProperty("bucket_prefix");
+		String prefix = getPrefix();
 		
 		for (Bucket b : buckets) {
 			
@@ -307,7 +320,7 @@ public class S3 {
 		
 		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
 		ObjectMetadata objectMetadata = new ObjectMetadata();
-		//objectMetadata.setContentLength(file_size);
+		objectMetadata.setContentLength(file_size);
 		objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
 		objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
 		putRequest.setMetadata(objectMetadata);
@@ -466,11 +479,11 @@ public class S3 {
 				try {
 					copy.waitForCompletion();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					
 				}
 			} catch (AmazonClientException amazonClientException) {
 				
-				amazonClientException.printStackTrace();
+				
 			}
 			
 	        return copy;
@@ -486,11 +499,11 @@ public class S3 {
 				try {
 					download.waitForCompletion();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					
 				}
 			} catch (AmazonClientException amazonClientException) {
 				
-				amazonClientException.printStackTrace();
+				
 			}
 			
 	        return download;	
@@ -505,11 +518,11 @@ public class S3 {
 				try {
 					download.waitForCompletion();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					
 				}
 			} catch (AmazonClientException amazonClientException) {
 				
-				amazonClientException.printStackTrace();
+				
 			}
 			
 	        return download;	
@@ -524,11 +537,11 @@ public class S3 {
 			try {
 				upload.waitForCompletion();
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				
 			}
 		} catch (AmazonClientException amazonClientException) {
 			
-			amazonClientException.printStackTrace();
+			
 		}
 		
         return upload;

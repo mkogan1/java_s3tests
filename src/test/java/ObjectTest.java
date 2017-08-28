@@ -1,15 +1,19 @@
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.testng.Assert;
 import org.testng.AssertJUnit;
-import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -21,11 +25,12 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
-import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
@@ -49,11 +54,11 @@ import com.amazonaws.util.StringUtils;
 
 public class ObjectTest {
 
-	private static S3 utils =  new S3();
+	private static S3 utils =  S3.getInstance();
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
 
-	@AfterMethod
+	@BeforeClass
 	public  void tearDownAfterClass() throws Exception {
 		
 		utils.tearDown(svc);	
@@ -64,7 +69,7 @@ public class ObjectTest {
 	public void setUp() throws Exception {
 	}
 
-	@Test
+	@Test(description = "object write to non existant bucket, fails")
 	public void testObjectWriteToNonExistantBucket() {
 		
 		String non_exixtant_bucket = utils.getBucketName(prefix);
@@ -77,7 +82,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "Reading non existant object, fails")
 	public void testObjectReadNotExist() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -91,7 +96,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object read from non existant bucket, fails")
 	public void testObjectReadFromNonExistantBucket() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -105,7 +110,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object read, update, write and delete, suceeds")
 	public void testMultiObjectDelete() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -127,7 +132,7 @@ public class ObjectTest {
 		    
 	}
 	
-	@Test
+	@Test(description = "creating unreadable object, fails")
 	public void testObjectCreateUnreadable() {
 		
 		try {
@@ -142,7 +147,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "reading empty object, fails")
 	public void testObjectHeadZeroBytes() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -163,7 +168,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "On object write and get with w/Etag, succeeds")
 	public void testObjectWriteCheckEtag() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -179,7 +184,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object write w/Cache-Control header, succeeds")
 	public void testObjectWriteCacheControl() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -204,7 +209,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object write, read, update and delete, succeeds")
 	public void testObjectWriteReadUpdateReadDelete() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -234,7 +239,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object copy w/non existant buckets, fails")
 	public void testObjectCopyBucketNotFound() {
 		
 		String bucket1 = utils.getBucketName(prefix);
@@ -251,7 +256,7 @@ public class ObjectTest {
 		
 	};
 	
-	@Test
+	@Test(description = "object copy w/no source key, fails")
 	public void TestObjectCopyKeyNotFound() {
 		
 		String bucket1 = utils.getBucketName(prefix);
@@ -270,30 +275,7 @@ public class ObjectTest {
 		
 	}
 	
-	
-	@Test
-	public void testObjectCreateBadContenttypevalid() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		String content = "echo lima golf";
-		
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-
-		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-		InputStream is = new ByteArrayInputStream(contentBytes);
-		
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentType("text/plain");
-		metadata.setContentLength(contentBytes.length);
-		
-		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
-		
-		AssertJUnit.assertEquals(svc.getObject(bucket_name, key).getObjectMetadata().getContentType(), "text/plain");
-		
-	}
-	
-	@Test
+	@Test(description = "object create w/empty content type, fails")
 	public void testObjectCreateBadContenttypeEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -319,7 +301,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/no content type, fails")
 	public void testObjectCreateBadContenttypeNone() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -346,7 +328,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/unreadable content type, fails")
 	public void testObjectCreateBadContenttypeUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -373,7 +355,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/Unreadable Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationUnreadable() {
 		
 		try {
@@ -400,7 +382,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/empty Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationEmpty() {
 		
 		try {
@@ -427,7 +409,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/no Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationNone() {
 		
 		try {
@@ -454,7 +436,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/negative content length, fails")
 	public void testObjectCreateBadContentlengthNegative() {
 		
 		try {
@@ -480,7 +462,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/empty Expect, succeeds")
 	public void testObjectCreateBadExpectEmpty() {
 		
 		try {
@@ -507,7 +489,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/unreadable Expect, succeeds")
 	public void testObjectCreateBadExpectUnreadable() {
 		
 		try {
@@ -534,7 +516,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/mismatch Expect, fails")
 	public void testObjectCreateBadExpectMismatch() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -554,7 +536,7 @@ public class ObjectTest {
 		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));	
 	}
 	
-	@Test
+	@Test(description = "object create w/no Expect, fails")
 	public void TestObjectCreateBadExpectNone() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -574,7 +556,7 @@ public class ObjectTest {
 		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));	
 	}
 	
-	@Test
+	@Test(description = "object create w/short MD5, fails")
 	public void testObjectCreateBadMd5InvalidShort() {
 		
 		try {
@@ -601,8 +583,35 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testObjectCreateBadMd5Bad() {
+	@Test(description = "object create w/empty MD5, fails")
+	public void TestObjectCreateBadMd5Empty() {
+		
+		try {
+			
+			String bucket_name = utils.getBucketName(prefix);
+			String key = "key1";
+			String content = "echo lima golf";
+			String md5 = " ";
+				
+			svc.createBucket(new CreateBucketRequest(bucket_name));
+
+			byte[] contentBytes = content.getBytes(StringUtils.UTF8);
+			InputStream is = new ByteArrayInputStream(contentBytes);
+				
+			ObjectMetadata metadata = new ObjectMetadata();
+			metadata.setContentLength(contentBytes.length);
+			metadata.setHeader("Content-MD5", md5);
+				
+			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		}
+		
+	}
+	
+	@Test(description = "object create w/invalid MD5, fails")
+	public void testObjectCreateBadMd5Ivalid() {
 		
 		try {
 			
@@ -628,7 +637,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/short MD5, fails")
 	public void testObjectCreateBadMd5Unreadable() {
 		
 		try {
@@ -655,7 +664,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/no MD5, fails")
 	public void testObjectCreateBadMd5None() {
 		
 		try {
@@ -682,9 +691,9 @@ public class ObjectTest {
 		
 	}
 	
+	//...................................................... SSE tests...............................................................
 	
-	
-	@Test
+	@Test(description = "object write(1b) w/SSE succeeds on https, fails on http")
 	public void testEncryptedTransfer1b() {
 		try {
 			
@@ -696,7 +705,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object write (1kb) w/SSE succeeds on https, fails on http")
 	public void testEncryptedTransfer1kb() {
 		
 		try {
@@ -709,7 +718,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object write (1MB) w/SSE succeeds on https, fails on http")
 	public void testEncryptedTransfer1MB() {
 		
 		try {
@@ -722,7 +731,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object write w/key w/no SSE  succeeds on https, fails on http")
 	public void testEncryptionKeyNoSSEC() {
 		
 		try {
@@ -750,7 +759,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "object write (1kb) w/SSE, fails")
 	public void testEncryptionKeySSECNoKey() {
 		
 		try {
@@ -779,7 +788,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object write w/SSE andno MD5, fails")
 	public void testEncryptionKeySSECNoMd5() {
 		
 		try {
@@ -809,7 +818,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object write w/SSE and Invalid MD5, fails")
 	public void testEncryptionKeySSECInvalidMd5() {
 		
 		try {
@@ -839,29 +848,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
-	public void testSSEKMSTransfer1b() {
-		try {
-			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1, "");
-			Assert.assertEquals(arr[0], arr[1]);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
-	
-	@Test
-	public void testSSEKMSTransfer1Kb() {
-		try {
-			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1024, "");
-			Assert.assertEquals(arr[0], arr[1]);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-	}
-	
-	@Test
+	@Test(description = "object write w/KMS, suceeds with https")
 	public void testSSEKMSPresent() {
 		try {
 			
@@ -886,7 +873,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "object write w/KMS and no kmskeyid, fails")
 	public void testSSEKMSNoKey() {
 		try {
 			
@@ -909,11 +896,11 @@ public class ObjectTest {
 				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
 			}
 		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidAccessKeyId");
 		}
 	}
 	
-	@Test
+	@Test(description = "object write w/no KMS and with kmskeyid, fails")
 	public void testSSEKMSNotDeclared() {
 		try {
 			
@@ -936,45 +923,685 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
 		}
 	}
+
+	//......................................prefixes, delimeter, markers........................................
 	
-	@Test
-	public void testSSEKMSBarbTransfer1b() {
-		try {
-			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1, utils.prop.getProperty("kmskeyid"));
-			Assert.assertEquals(arr[0], arr[1]);
-			
+	@Test(description = "object list) w/ percentage delimeter, suceeds")
+	public void testObjectListDelimiterPercentage() {
+		
+		String [] keys = {"b%ar", "b%az", "c%ab", "foo"};
+		String delim = "%";
+		java.util.List<String> expected_prefixes = Arrays.asList("b%", "c%");
+		java.util.List<String> expected_keys = Arrays.asList("foo");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals(result.getCommonPrefixes(), expected_prefixes);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ whitespace delimeter, suceeds")
+	public void testObjectListDelimiterWhitespace() {
+		
+		String [] keys = {"bar", "baz", "cab", "foo"};
+		String delim = " ";
+        try {
+        	
+    		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+    		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
+            ListObjectsV2Result result = svc.listObjectsV2(req);
+            
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
+		}
+		
+	}
+	
+	@Test(description = "object list) w/dot delimeter, suceeds")
+	public void testObjectListDelimiterDot() {
+		
+		String [] keys = {"b.ar", "b.az", "c.ab", "foo"};
+		String delim = ".";
+		java.util.List<String> expected_prefixes = Arrays.asList("b.", "c.");
+		java.util.List<String> expected_keys = Arrays.asList("foo");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals(result.getCommonPrefixes(), expected_prefixes);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/unreadable delimeter, succeeds")
+	public void testObjectListDelimiterUnreadable() {
+		
+		String [] keys = {"bar", "baz", "cab", "foo"};
+		String delim = "\\x0a";
+        try {
+        	
+    		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+    		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
+            ListObjectsV2Result result = svc.listObjectsV2(req);
+            
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidArgument");
 		}
+		
 	}
 	
-	@Test
-	public void testSSEKMSBarbTransfer1Kb() {
+	@Test(description = "object list) w/ non existant delimeter, suceeds")
+	public void testObjectListDelimiterNotExist() {
+		
+		String [] keys = {"bar", "baz", "cab", "foo"};
+		String delim = "/";
+		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "cab", "foo");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ basic prefix, suceeds")
+	public void testObjectListPrefixBasic() {
+		
+		String [] keys = {"foo/bar", "foo/baz", "quux"};
+		String prefix = "foo/";
+		java.util.List<String> expected_keys = Arrays.asList("foo/bar", "foo/baz");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ alt prefix, suceeds")
+	public void testObjectListPrefixAlt() {
+		
+		String [] keys = {"bar", "baz", "foo"};
+		String prefix = "ba";
+		java.util.List<String> expected_keys = Arrays.asList("bar", "baz");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ empty prefix, suceeds")
+	public void testObjectListPrefixEmpty() {
+		
+		String [] keys = {"foo/bar", "foo/baz", "quux"};
+		String prefix = "";
+		java.util.List<String> expected_keys = Arrays.asList("foo/bar", "foo/baz", "quux");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ empty prefix, suceeds")
+	public void testObjectListPrefixNone() {
+		
+		String [] keys = {"foo/bar", "foo/baz", "quux"};
+		String prefix = "";
+		java.util.List<String> expected_keys = Arrays.asList("foo/bar", "foo/baz", "quux");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ non existant prefix, suceeds")
+	public void testObjectListPrefixNotExist() {
+		
+		String [] keys = {"foo/bar", "foo/baz", "quux"};
+		String prefix = "d";
+		java.util.List<String> expected_keys = Arrays.asList();
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ unreadable prefix, suceeds")
+	public void testObjectListPrefixUnreadable() {
+		
+		String [] keys = {"foo/bar", "foo/baz", "quux"};
+		String prefix = "\\x0a";
+		java.util.List<String> expected_keys = Arrays.asList();
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ basic prefix and delimeter, suceeds")
+	public void testObjectListPrefixDelimiterBasic() {
+		
+		String [] keys = {"foo/bar", "foo/baz/xyzzy", "quux/thud", "asdf"};
+		String prefix = "foo/";
+		String delim = "/";
+		java.util.List<String> expected_keys = Arrays.asList("foo/bar");
+		java.util.List<String> expected_prefixes = Arrays.asList( "foo/baz/");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals((result.getCommonPrefixes()), expected_prefixes);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ alt prefix and delimeter, suceeds")
+	public void testObjectListPrefixDelimiterAlt() {
+		
+		String [] keys = {"bar", "bazar", "cab", "foo"};
+		String prefix = "ba";
+		String delim = "a";
+		java.util.List<String> expected_keys = Arrays.asList("bar");
+		java.util.List<String> expected_prefixes = Arrays.asList( "baza");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals((result.getCommonPrefixes()), expected_prefixes);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ non existant prefix and delimeter, suceeds")
+	public void testObjectListPrefixDelimiterPrefixNotExist() {
+		
+		String [] keys = {"b/a/r", "b/a/c", "b/a/g", "g"};
+		String prefix = "d";
+		String delim = "/";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list.isEmpty(), true);
+		
+	}
+	
+	@Test(description = "object list) w/ prefix and delimeter non existant, suceeds")
+	public void testObjectListPrefixDelimiterDelimiterNotExist() {
+		
+		String [] keys = {"b/a/c", "b/a/g", "b/a/r", "g"};
+		String prefix = "b";
+		String delim = "z";
+		java.util.List<String> expected_keys = Arrays.asList("b/a/c", "b/a/g", "b/a/r");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ prefix and delimeter and delimeter non existant, suceeds")
+	public void testObjectListPrefixDelimiterPrefixDelimiterNotExist() {
+		
+		String [] keys = {"b/a/c", "b/a/g", "b/a/r", "g"};
+		String prefix = "y";
+		String delim = "z";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withPrefix(prefix).withDelimiter(delim);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getPrefix(), prefix);
+        Assert.assertEquals(result.getDelimiter(), delim);
+        
+        Assert.assertEquals((result.getCommonPrefixes()).isEmpty(), true);
+        
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list.isEmpty(), true);
+		
+	}
+	
+	@Test(description = "object list) w/ negative maxkeys, suceeds")
+	public void testObjectListMaxkeysNegative() {
+		
+		//passes..wonder blandar
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(-1);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getMaxKeys(), -1);
+        Assert.assertEquals(result.isTruncated(), true);
+       
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list.isEmpty(), true);
+		
+	}
+	
+	@Test(description = "object list) w/maxkeys=1 , suceeds")
+	public void testObjectListMaxkeysOne() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		java.util.List<String> expected_keys  = Arrays.asList("bar");
+		
+		int max_keys = 1;
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(max_keys);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getMaxKeys(), max_keys);
+        Assert.assertEquals(result.isTruncated(), true);
+       
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/maxkeys=0, suceeds")
+	public void testObjectListMaxkeysZero() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		
+		int max_keys = 0;
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(max_keys);
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getMaxKeys(), max_keys);
+        Assert.assertEquals(result.isTruncated(), false);
+       
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list.isEmpty(), true);
+		
+	}
+	
+	@Test(description = "object list) w/ no maxkeys, suceeds")
+	public void testObjectListMaxkeysNone() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "foo", "quxx");
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName());
+        ListObjectsV2Result result = svc.listObjectsV2(req);
+        
+        Assert.assertEquals(result.getMaxKeys(), 1000);
+        Assert.assertEquals(result.isTruncated(), false);
+       
+		Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/ empty marker, fails")
+	public void testObjectListMarkerEmpty() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		String marker = " ";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
 		
 		try {
 			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 1024, utils.prop.getProperty("kmskeyid"));
-			Assert.assertEquals(arr[0], arr[1]);
+			ListObjectsRequest req = new ListObjectsRequest();
+			req.setBucketName(bucket.getName());
+			req.setMarker(marker);
+			
+			ObjectListing result = svc.listObjects(req);
 			
 		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidArgument");
+			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
 	
-	@Test
-	public void testSSEKMSBarbTransfer13B() {
+	@Test(description = "object list) w/ unreadable marker, succeeds")
+	public void testObjectListMarkerUnreadable() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "foo", "quxx");
+		String marker = "\\x0a";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		ListObjectsRequest req = new ListObjectsRequest();
+		req.setBucketName(bucket.getName());
+		req.setMarker(marker);
+		ObjectListing result = svc.listObjects(req); 
+
+        Assert.assertEquals(result.getMarker(), marker);
+        Assert.assertEquals(result.isTruncated(), false);
+        
+        
+        Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/marker not in list, succeds")
+	public void testObjectListMarkerNotInList() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		java.util.List<String> expected_keys = Arrays.asList("foo", "quxx");
+		String marker = "blah";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		ListObjectsRequest req = new ListObjectsRequest();
+		req.setBucketName(bucket.getName());
+		req.setMarker(marker);
+		ObjectListing result = svc.listObjects(req); 
+
+        Assert.assertEquals(result.getMarker(), marker);
+        
+        Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	@Test(description = "object list) w/marker after list, fails")
+	public void testObjectListMarkerAfterList() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		String marker = "zzz";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		ListObjectsRequest req = new ListObjectsRequest();
+		req.setBucketName(bucket.getName());
+		req.setMarker(marker);
+		ObjectListing result = svc.listObjects(req); 
+
+        Assert.assertEquals(result.getMarker(), marker);
+        Assert.assertEquals(result.isTruncated(), false);
+        
+        
+        Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list.isEmpty(), true);
+		
+	}
+	
+	@Test(description = "object list) w/marker before list, fails")
+	public void testObjectListMarkerBeforeList() {
+		
+		String [] keys = {"bar", "baz", "foo", "quxx"};
+		java.util.List<String> expected_keys = Arrays.asList("bar", "baz", "foo", "quxx");
+		String marker = "aaa";
+		
+		com.amazonaws.services.s3.model.Bucket bucket = utils.createKeys(svc, keys);
+		ListObjectsRequest req = new ListObjectsRequest();
+		req.setBucketName(bucket.getName());
+		req.setMarker(marker);
+		ObjectListing result = svc.listObjects(req); 
+
+        Assert.assertEquals(result.getMarker(), marker);
+        Assert.assertEquals(result.isTruncated(), false);
+        
+        
+        Object[] k = new Object[] {};
+		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
+		for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+			list.add(objectSummary.getKey());
+        }
+		Assert.assertEquals(list, expected_keys);
+		
+	}
+	
+	//.......................................Get Ranged Object in Range....................................................
+		
+	// @Test(description = "get object w/empty range, fails")
+		
+	@Test(description = "get object w/range -> return trailing bytes, suceeds")
+	public void testRangedReturnTrailingBytesResponseCode() throws IOException {
+			
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		String content = "testcontent";
+			
 		try {
+
+
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		svc.putObject(bucket_name, key, content);
 			
-			String arr[] = utils.EncryptionSseKMSCustomerWrite(svc, 13, "testkey-1");
-			Assert.assertEquals(arr[0], arr[1]);
-			
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
+		GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+	    request.withRange(4, 10);
+	    S3Object obj = svc.getObject(request);
+	        
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(obj.getObjectContent()));
+	    	while (true) {
+	        	String line = reader.readLine();
+	            if (line == null) break;
+	            String str = content.substring(4);
+	            Assert.assertEquals(line, str);
+	   }
+
+	   } catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
+	        	
+	}
+		
+	@Test(description = "get object w/range -> leading bytes, suceeds")
+	public void testRangedSkipLeadingBytesResponseCode() throws IOException {
+			
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		String content = "testcontent";
+			
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		svc.putObject(bucket_name, key, content);
+			
+		GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+	    request.withRange(4, 10);
+	    S3Object obj = svc.getObject(request);
+	        
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(obj.getObjectContent()));
+	    	while (true) {
+	        	String line = reader.readLine();
+	            if (line == null) break;
+	            String str = content.substring(4);
+	            Assert.assertEquals(line, str);
+	       
+	       }	
+	}
+		
+	@Test(description = "get object w/range, suceeds")
+	public void testRangedrequestResponseCode() throws IOException {
+			
+		String bucket_name = utils.getBucketName(prefix);
+		String key = "key1";
+		String content = "testcontent";
+			
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		svc.putObject(bucket_name, key, content);
+			
+		GetObjectRequest request = new GetObjectRequest(bucket_name, key);
+	    request.withRange(4, 7);
+	    S3Object obj = svc.getObject(request);
+	        
+	    BufferedReader reader = new BufferedReader(new InputStreamReader(obj.getObjectContent()));
+	      while (true) {
+	        	String line = reader.readLine();
+	            if (line == null) break;
+	            String str = content.substring(4,8);
+	            Assert.assertEquals(line, str);
+	      }	
+				
 	}
 	
-	@Test
+	@Test(description = "multipart uploads for small to big sizes using LLAPI, succeeds!")
 	public void testMultipartUploadMultipleSizesLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1002,7 +1629,7 @@ public class ObjectTest {
 		svc.completeMultipartUpload(resp6);
 	}
 	
-	@Test
+	@Test(description = "multipart uploads for size 0 using LLAPI, fails!")
 	public void testMultipartUploadEmptyLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1022,7 +1649,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "multipart uploads for small file using LLAPI, succeeds!")
 	public void testMultipartUploadSmallLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1037,7 +1664,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "multipart uploads w/missing part using LLAPI, fails!")
 	public void testMultipartUploadIncorrectMissingPartLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1087,7 +1714,7 @@ public class ObjectTest {
 	}
 	
 	
-	@Test
+	@Test(description = "multipart uploads w/non existant upload using LLAPI, fails!")
 	public void testAbortMultipartUploadNotFoundLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1106,7 +1733,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "multipart uploads abort using LLAPI, succeeds!")
 	public void testAbortMultipartUploadLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1121,7 +1748,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "multipart uploads overwrite using LLAPI, succeeds!")
 	public void testMultipartUploadOverwriteExistingObjectLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1140,7 +1767,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "multipart uploads for a very small file using LLAPI, fails!")
 	public void testMultipartUploadFileTooSmallFileLLAPI() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1160,7 +1787,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
 	public void testMultipartCopyMultipleSizesLLAPI() {
 		
 		String src_bkt = utils.getBucketName(prefix);
@@ -1197,7 +1824,7 @@ public class ObjectTest {
 	}
 	
 	
-	@Test
+	@Test(description = "Upload of a  file using HLAPI, succeeds!")
 	public void testUploadFileHLAPIBigFile() {
 	
 		String bucket_name = utils.getBucketName(prefix);
@@ -1212,26 +1839,8 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testUploadFileHLAPISmallFile() {
-		
-		try {
-			
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			svc.createBucket(new CreateBucketRequest(bucket_name));
-			
-			String filePath = "./data/sample.txt";
-			
-			Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
-			
-		}catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
-		}
-		
-	}
 	
-	@Test
+	@Test(description = "Upload of a file to non existant bucket using HLAPI, fails!")
 	public void testUploadFileHLAPINonExistantBucket() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1247,8 +1856,8 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testMultipartUploadHLAPIA() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Multipart Upload for file using HLAPI, succeeds!")
+	public void testMultipartUploadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
 	
@@ -1262,7 +1871,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Upload of a file to nonexistant bucket using HLAPI, fails!")
 	public void testMultipartUploadHLAPINonEXistantBucket() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1279,7 +1888,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Upload of a file with pause and resume using HLAPI, succeeds!")
 	public void testMultipartUploadWithPause() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1316,8 +1925,8 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testMultipartCopyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Multipart copy using HLAPI, succeeds!")
+	public void testMultipartCopyHLAPIA() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
 		String dst_bkt = utils.getBucketName(prefix);
@@ -1335,8 +1944,8 @@ public class ObjectTest {
 		Assert.assertEquals(cpy.isDone(), true);
 	}
 	
-	@Test
-	public void testMultipartCopyNoDSTBucketHLAPIA() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Multipart copy for file with non existant destination bucket using HLAPI, fails!")
+	public void testMultipartCopyNoDSTBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
 		String dst_bkt = utils.getBucketName(prefix);
@@ -1358,8 +1967,8 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testMultipartCopyNoSRCBucketHLAPIA() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Multipart copy w/non existant source bucket using HLAPI, fails!")
+	public void testMultipartCopyNoSRCBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
 		String dst_bkt = utils.getBucketName(prefix);
@@ -1376,8 +1985,8 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
-	public void testMultipartCopyNoSRCKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Multipart copy w/non existant source key using HLAPI, fails!")
+	public void testMultipartCopyNoSRCKeyHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
 		String dst_bkt = utils.getBucketName(prefix);
@@ -1395,7 +2004,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "Download using HLAPI, suceeds!")
 	public void testDownloadHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1411,8 +2020,8 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testDownloadNoBucketHLAPIA() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Download from non existant bucket using HLAPI, fails!")
+	public void testDownloadNoBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -1427,7 +2036,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "Download w/no key using HLAPI, suceeds!")
 	public void testDownloadNoKeyHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1445,7 +2054,7 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Download using HLAPI, suceeds!")
 	public void testMultipartDownloadHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1459,13 +2068,10 @@ public class ObjectTest {
 		
 		MultipleFileDownload download = utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
 		Assert.assertEquals(download.isDone(), true);
-		
-		//File f = new File("./downloads/file.mpg");
-		//Assert.assertEquals(f.exists(), true);
 	}
 	
-	@Test
-	public void testDownloadWithPauseHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
+	@Test(description = "Multipart Download with pause and resume using HLAPI, suceeds!")
+	public void testMultipartDownloadWithPauseHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		svc.createBucket(new CreateBucketRequest(bucket_name));
@@ -1501,8 +2107,8 @@ public class ObjectTest {
 		
 	}
 	
-	@Test
-	public void testMultipartDownloadNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Multipart Download from non existant bucket using HLAPI, fails!")
+	public void testMultipartDownloadNoBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		
@@ -1517,7 +2123,7 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "Multipart Download w/no key using HLAPI, fails!")
 	public void testMultipartDownloadNoKeyHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1534,25 +2140,43 @@ public class ObjectTest {
 		}
 	}
 	
-	@Test
-	public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	// @Test(description = "Upload of list of files using HLAPI, suceeds!")
+	// public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		String key = "key1";
-		String dstDir = "./downloads";
+	// 	String bucket_name = utils.getBucketName(prefix);
+	// 	svc.createBucket(new CreateBucketRequest(bucket_name));
+	// 	String key = "key1";
+	// 	String dstDir = "./downloads";
 		
-		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-		Assert.assertEquals(upl.isDone(), true);
+	// 	MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+	// 	Assert.assertEquals(upl.isDone(), true);
 		
-		ObjectListing listing = svc.listObjects( bucket_name);
-		List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-		while (listing.isTruncated()) {
-		   listing = svc.listNextBatchOfObjects (listing);
-		   summaries.addAll (listing.getObjectSummaries());
-		}
-		Assert.assertEquals(summaries.size(), 2);
+	// 	ObjectListing listing = svc.listObjects( bucket_name);
+	// 	List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+	// 	while (listing.isTruncated()) {
+	// 	   listing = svc.listNextBatchOfObjects (listing);
+	// 	   summaries.addAll (listing.getObjectSummaries());
+	// 	}
+	// 	Assert.assertEquals(summaries.size(), 2);
 		
-	}
+	// }
+	
+	// @Test(description = "Upload of list of files to non existant bucket using HLAPI, fails!")
+	// public void testUploadFileListNoBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
+		
+	// 	String bucket_name = utils.getBucketName(prefix);
+	// 	svc.createBucket(new CreateBucketRequest(bucket_name));
+	// 	String key = "key1";
+	// 	String dstDir = "./downloads";
+		
+	// 	try {
+			
+	// 		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+	// 	} catch (AmazonServiceException err) {
+	// 		AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+	// 	}
+		
+	// }
+	
 	
 }

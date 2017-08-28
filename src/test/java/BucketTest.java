@@ -1,28 +1,22 @@
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
 import org.testng.AssertJUnit;
-import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.util.StringUtils;
 
 public class BucketTest {
 	
-	private static S3 utils =  new S3();
+	private static S3 utils =  S3.getInstance();;
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
 
-	@AfterMethod
+	@BeforeClass
 	public  void tearDownAfterClass() throws Exception {
 		
 		utils.tearDown(svc);	
@@ -32,7 +26,7 @@ public class BucketTest {
 	public void setUp() throws Exception {
 	}
 
-	@Test
+	@Test(description = "empty buckets return no contents")
 	public void testBucketListEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -43,7 +37,7 @@ public class BucketTest {
 		AssertJUnit.assertEquals(list.getObjectSummaries().isEmpty(), true);
 	}
 	
-	@Test 
+	@Test (description = "deleting non existant bucket returns NoSuchBucket")
 	public void testBucketDeleteNotExist() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -58,7 +52,7 @@ public class BucketTest {
 		
 	}
 	
-	@Test 
+	@Test(description = "deleting non empty bucket returns BucketNotEmpty")
 	public void testBucketDeleteNonEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -75,7 +69,7 @@ public class BucketTest {
 		
 	}
 	
-	@Test 
+	@Test(description = "should delete bucket")
 	public void testBucketCreateReadDelete() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -87,7 +81,7 @@ public class BucketTest {
 		
 	}
 	
-	@Test
+	@Test(description = "distinct buckets return distinct objects")
 	public void testBucketListDistinct() {
 		
 		String bucket1 = utils.getBucketName(prefix);
@@ -103,7 +97,7 @@ public class BucketTest {
 		AssertJUnit.assertEquals(list.getObjectSummaries().isEmpty(), true);
 	}
 	
-	@Test
+	@Test(description = "Accessing non existant bucket should fail ")
 	public void testBucketNotExist() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -115,8 +109,7 @@ public class BucketTest {
 		}
 	}
 	
-	@Test
-	//@Description("create w/expect 200, garbage but S3 succeeds!")
+	@Test(description = "create w/expect 200, garbage but S3 succeeds!")
 	public void testBucketCreateBadExpectMismatch() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -126,8 +119,7 @@ public class BucketTest {
 		 svc.createBucket(bktRequest);
 	}
 	
-	@Test
-	//@Description("create w/expect empty, garbage but S3 succeeds!")
+	@Test(description = "create w/expect empty, garbage but S3 succeeds!")
 	public void testBucketCreateBadExpectEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -137,8 +129,7 @@ public class BucketTest {
 		svc.createBucket(bktRequest);
 	}
 	
-	@Test
-	//@Description("create w/expect empty, garbage but S3 succeeds!")
+	@Test(description = "create w/expect empty, garbage but S3 succeeds!")
 	public void testBucketCreateBadExpectUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -147,37 +138,8 @@ public class BucketTest {
 		bktRequest.putCustomRequestHeader("Expect", "\\x07");
 		svc.createBucket(bktRequest);
 	}
-	
 
-	@Test
-	public void TestObjectCreateBadMd5Empty() {
-		
-		try {
-			
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String content = "echo lima golf";
-			String md5 = " ";
-				
-			svc.createBucket(new CreateBucketRequest(bucket_name));
-
-			byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-			InputStream is = new ByteArrayInputStream(contentBytes);
-				
-			ObjectMetadata metadata = new ObjectMetadata();
-			metadata.setContentLength(contentBytes.length);
-			metadata.setHeader("Content-MD5", md5);
-				
-			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
-			
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Requ]est");
-		}
-		
-	}
-
-	@Test
-	//@Description("create w/non-graphic content length, succeeds")
+	@Test(description = "create w/non-graphic content length, succeeds!")
 	public void testBucketCreateContentlengthUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -192,7 +154,7 @@ public class BucketTest {
 		}
 	}
 
-	@Test
+	@Test(description = "create w/no content length, fails!")
 	public void testBucketCreateContentlengthNone() {
 		try {
 			
@@ -207,7 +169,7 @@ public class BucketTest {
 		}
 	}
 
-	@Test
+	@Test(description = "create w/ empty content length, fails!")
 	public void testBucketCreateContentlengthEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -223,7 +185,7 @@ public class BucketTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "create w/ unreadable authorization, fails!")
 	public void testBucketCreateBadAuthorizationUnreadable() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -238,7 +200,7 @@ public class BucketTest {
 		}
 	}
 
-	@Test
+	@Test(description = "create w/ empty authorization, fails!")
 	public void testBucketCreateBadAuthorizationEmpty() {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -253,7 +215,7 @@ public class BucketTest {
 		}
 	}
 	
-	@Test
+	@Test(description = "create w/no authorization, fails!")
 	public void testBucketCreateBadAuthorizationNone() {
 		
 		String bucket_name = utils.getBucketName(prefix);

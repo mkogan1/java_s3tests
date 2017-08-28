@@ -10,7 +10,8 @@ import java.util.Properties;
 
 import org.testng.Assert;
 import org.testng.AssertJUnit;
-import org.testng.annotations.AfterMethod;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -20,14 +21,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.transfer.Copy;
@@ -46,12 +45,12 @@ import com.amazonaws.util.StringUtils;
 
 public class AWS4Test {
 	
-	private static S3 utils =  new S3();
+	private static S3 utils =  S3.getInstance();;
 	AmazonS3 svc = utils.getAWS4CLI();
 	String prefix = utils.getPrefix();
 	static Properties prop = new Properties();
 	
-	@AfterMethod
+	@BeforeClass
 	public  void tearDownAfterClass() throws Exception {
 		
 		utils.tearDown(svc);	
@@ -61,7 +60,7 @@ public class AWS4Test {
 	public void setUp() throws Exception {
 	}
 	
-	@Test
+	@Test(description = "object create w/bad X-Amz-Date, fails!")
 	public void testObjectCreateBadamzDateAfterEndAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -85,7 +84,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Date after, fails!")
 	public void testObjectCreateBadDateAfterEndAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -109,7 +108,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Date before, fails!")
 	public void testObjectCreateBadamzDateBeforeEpochAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -133,7 +132,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Date before epoch, fails!")
 	public void testObjectCreateBadDateBeforeEpochAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -153,7 +152,7 @@ public class AWS4Test {
 		svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
 	}
 	
-	@Test
+	@Test(description = "object create w/X-Amz-Date after today, fails!")
 	public void testObjectCreateBadAmzDateAfterTodayAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -177,7 +176,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Date after today, suceeds!")
 	public void testObjectCreateBadDateAfterToday4AWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -198,7 +197,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/X-Amz-Date before today, fails!")
 	public void testObjectCreateBadAmzDateBeforeTodayAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -222,7 +221,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Date before today, suceeds!")
 	public void testObjectCreateBadDateBeforeToday4AWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -243,7 +242,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/no X-Amz-Date, fails!")
 	public void testObjectCreateBadAmzDateNoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -267,7 +266,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/no Date, suceeds!")
 	public void testObjectCreateBadDateNoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -288,7 +287,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/unreadable X-Amz-Date, fails!")
 	public void testObjectCreateBadamzDateUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -312,7 +311,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/unreadable Date, fails!")
 	public void testObjectCreateBadDateUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -336,7 +335,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/empty X-Amz-Date, fails!")
 	public void testObjectCreateBadamzDateEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -360,7 +359,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/empty Date, suceeds!")
 	public void testObjectCreateBadDateEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -381,7 +380,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/invalid X-Amz-Date, fails!")
 	public void testObjectCreateBadamzDateInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -405,7 +404,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/invalid Date, suceeds..lies!!")
 	public void testObjectCreateBadDateInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -426,7 +425,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "object create w/no User-Agent, fails!")
 	public void testObjectCreateBadUANoneAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -450,7 +449,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/unreadable User-Agent, fails!")
 	public void testObjectCreateBadUAUnreadableAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -474,7 +473,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/empty User-Agent, fails!")
 	public void testObjectCreateBadUAEmptyAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -498,7 +497,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Invalid Authorization, fails!")
 	public void testObjectCreateBadAuthorizationInvalidAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -522,7 +521,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/Incorrect Authorization, fails!")
 	public void testObjectCreateBadAuthorizationIncorrectAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -546,7 +545,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "object create w/invalid MD5, fails!")
 	public void testObjectCreateBadMd5InvalidGarbageAWS4() {
 		
 		String bucket_name = utils.getBucketName();
@@ -571,8 +570,8 @@ public class AWS4Test {
 	}
 	
 	
-	@Test
-	public void testMultipartUploadMultipleSizesLLAPI() {
+	@Test(description = "multipart uploads for small to big sizes using LLAPI, succeeds!")
+	public void testMultipartUploadMultipleSizesLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -599,8 +598,8 @@ public class AWS4Test {
 		svc.completeMultipartUpload(resp6);
 	}
 	
-	@Test
-	public void testMultipartUploadEmptyLLAPI() {
+	@Test(description = "multipart uploads for size 0 using LLAPI, fails!")
+	public void testMultipartUploadEmptyLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -619,8 +618,8 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testMultipartUploadSmallLLAPI() {
+	@Test(description = "multipart uploads for small file using LLAPI, succeeds!")
+	public void testMultipartUploadSmallLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -634,8 +633,8 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testMultipartUploadIncorrectMissingPartLLAPI() {
+	@Test(description = "multipart uploads w/missing part using LLAPI, fails!")
+	public void testMultipartUploadIncorrectMissingPartLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -684,8 +683,8 @@ public class AWS4Test {
 	}
 	
 	
-	@Test
-	public void testAbortMultipartUploadNotFoundLLAPI() {
+	@Test(description = "multipart uploads w/non existant upload using LLAPI, fails!")
+	public void testAbortMultipartUploadNotFoundLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -703,8 +702,8 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testAbortMultipartUploadLLAPI() {
+	@Test(description = "multipart uploads abort using LLAPI, succeeds!")
+	public void testAbortMultipartUploadLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -718,8 +717,8 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testMultipartUploadOverwriteExistingObjectLLAPI() {
+	@Test(description = "multipart uploads overwrite using LLAPI, succeeds!")
+	public void testMultipartUploadOverwriteExistingObjectLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -737,8 +736,8 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testMultipartUploadFileTooSmallFileLLAPI() {
+	@Test(description = "multipart uploads for a very small file using LLAPI, fails!")
+	public void testMultipartUploadFileTooSmallFileLLAPIAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -757,8 +756,8 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testMultipartCopyMultipleSizesLLAPI() {
+	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
+	public void testMultipartCopyMultipleSizesLLAPIAWS4() {
 		
 		String src_bkt = utils.getBucketName(prefix);
 		String dst_bkt = utils.getBucketName(prefix);
@@ -794,8 +793,8 @@ public class AWS4Test {
 	}
 	
 	
-	@Test
-	public void testUploadFileHLAPIBigFile() {
+	@Test(description = "Upload of a  file using HLAPI, succeeds!")
+	public void testUploadFileHLAPIBigFileAWS4() {
 	
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -809,27 +808,9 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
-	public void testUploadFileHLAPISmallFile() {
-		
-		try {
-			
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			svc.createBucket(new CreateBucketRequest(bucket_name));
-			
-			String filePath = "./data/sample.txt";
-			
-			Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath );
-			
-		}catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
-		}
-		
-	}
 	
-	@Test
-	public void testUploadFileHLAPINonExistantBucket() {
+	@Test(description = "Upload of a file to non existant bucket using HLAPI, fails!")
+	public void testUploadFileHLAPINonExistantBucketAWS4() {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		String key = "key1";
@@ -844,7 +825,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Upload for file using HLAPI, succeeds!")
 	public void testMultipartUploadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -859,7 +840,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Upload of a file to nonexistant bucket using HLAPI, fails!")
 	public void testMultipartUploadHLAPINonEXistantBucketAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -876,7 +857,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Upload of a file with pause and resume using HLAPI, succeeds!")
 	public void testMultipartUploadWithPauseAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -913,7 +894,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart copy using HLAPI, succeeds!")
 	public void testMultipartCopyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
@@ -932,7 +913,7 @@ public class AWS4Test {
 		Assert.assertEquals(cpy.isDone(), true);
 	}
 	
-	@Test
+	@Test(description = "Multipart copy for file with non existant destination bucket using HLAPI, fails!")
 	public void testMultipartCopyNoDSTBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
@@ -955,7 +936,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart copy w/non existant source bucket using HLAPI, fails!")
 	public void testMultipartCopyNoSRCBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
@@ -973,7 +954,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "Multipart copy w/non existant source key using HLAPI, fails!")
 	public void testMultipartCopyNoSRCKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String src_bkt = utils.getBucketName(prefix);
@@ -992,7 +973,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "Download using HLAPI, suceeds!")
 	public void testDownloadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1008,7 +989,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Download from non existant bucket using HLAPI, fails!")
 	public void testDownloadNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1024,7 +1005,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Download w/no key using HLAPI, suceeds!")
 	public void testDownloadNoKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1042,7 +1023,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Download using HLAPI, suceeds!")
 	public void testMultipartDownloadHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1058,8 +1039,8 @@ public class AWS4Test {
 		Assert.assertEquals(download.isDone(), true);
 	}
 	
-	@Test
-	public void testDownloadWithPauseHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
+	@Test(description = "Multipart Download with pause and resume using HLAPI, suceeds!")
+	public void testMultipartDownloadWithPauseHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException, IOException {
 		
 		String bucket_name = utils.getBucketName(prefix);
 		svc.createBucket(new CreateBucketRequest(bucket_name));
@@ -1095,7 +1076,7 @@ public class AWS4Test {
 		
 	}
 	
-	@Test
+	@Test(description = "Multipart Download from non existant bucket using HLAPI, fails!")
 	public void testMultipartDownloadNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1111,7 +1092,7 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
+	@Test(description = "Multipart Download w/no key using HLAPI, fails!")
 	public void testMultipartDownloadNoKeyHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
 		String bucket_name = utils.getBucketName(prefix);
@@ -1128,45 +1109,43 @@ public class AWS4Test {
 		}
 	}
 	
-	@Test
-	public void testUploadFileListHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	// @Test(description = "Upload of list of files using HLAPI, suceeds!")
+	// public void testUploadFileListHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		String key = "key1";
-		String dstDir = "./downloads";
+	// 	String bucket_name = utils.getBucketName(prefix);
+	// 	svc.createBucket(new CreateBucketRequest(bucket_name));
+	// 	String key = "key1";
+	// 	String dstDir = "./downloads";
 		
-		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-		Assert.assertEquals(upl.isDone(), true);
+	// 	MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+	// 	Assert.assertEquals(upl.isDone(), true);
 		
-		ObjectListing listing = svc.listObjects( bucket_name);
-		List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-		while (listing.isTruncated()) {
-		   listing = svc.listNextBatchOfObjects (listing);
-		   summaries.addAll (listing.getObjectSummaries());
-		}
-		Assert.assertEquals(summaries.size(), 2);
+	// 	ObjectListing listing = svc.listObjects( bucket_name);
+	// 	List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+	// 	while (listing.isTruncated()) {
+	// 	   listing = svc.listNextBatchOfObjects (listing);
+	// 	   summaries.addAll (listing.getObjectSummaries());
+	// 	}
+	// 	Assert.assertEquals(summaries.size(), 2);
 		
-	}
+	// }
 	
-	@Test
-	public void testUploadFileListNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	// @Test(description = "Upload of list of files to non existant bucket using HLAPI, fails!")
+	// public void testUploadFileListNoBucketHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		String key = "key1";
-		String dstDir = "./downloads";
+	// 	String bucket_name = utils.getBucketName(prefix);
+	// 	svc.createBucket(new CreateBucketRequest(bucket_name));
+	// 	String key = "key1";
+	// 	String dstDir = "./downloads";
 		
-		try {
+	// 	try {
 			
-			MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
-		}
+	// 		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+	// 	} catch (AmazonServiceException err) {
+	// 		AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
+	// 	}
 		
-	}
-		
-		
-		
+	// }
+	
 	
 }
