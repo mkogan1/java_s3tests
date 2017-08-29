@@ -1519,9 +1519,6 @@ public class ObjectTest {
 	}
 	
 	//.......................................Get Ranged Object in Range....................................................
-		
-	// @Test(description = "get object w/empty range, fails")
-		
 	@Test(description = "get object w/range -> return trailing bytes, suceeds")
 	public void testRangedReturnTrailingBytesResponseCode() throws IOException {
 			
@@ -1629,25 +1626,6 @@ public class ObjectTest {
 		svc.completeMultipartUpload(resp6);
 	}
 	
-	@Test(description = "multipart uploads for size 0 using LLAPI, fails!")
-	public void testMultipartUploadEmptyLLAPI() {
-		
-		String bucket_name = utils.getBucketName(prefix);
-		String key = "key1";
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		
-		String filePath = "./data/file.mpg";
-		long size = 0;
-		
-		try {
-			
-			CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
-			svc.completeMultipartUpload(resp);
-		}catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
-		
-	}
 	
 	@Test(description = "multipart uploads for small file using LLAPI, succeeds!")
 	public void testMultipartUploadSmallLLAPI() {
@@ -2140,43 +2118,26 @@ public class ObjectTest {
 		}
 	}
 	
-	// @Test(description = "Upload of list of files using HLAPI, suceeds!")
-	// public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Upload of list of files using HLAPI, suceeds!")
+	public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
-	// 	String bucket_name = utils.getBucketName(prefix);
-	// 	svc.createBucket(new CreateBucketRequest(bucket_name));
-	// 	String key = "key1";
-	// 	String dstDir = "./downloads";
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
+		String dstDir = "./downloads";
 		
-	// 	MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-	// 	Assert.assertEquals(upl.isDone(), true);
+		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+		Assert.assertEquals(upl.isDone(), true);
 		
-	// 	ObjectListing listing = svc.listObjects( bucket_name);
-	// 	List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-	// 	while (listing.isTruncated()) {
-	// 	   listing = svc.listNextBatchOfObjects (listing);
-	// 	   summaries.addAll (listing.getObjectSummaries());
-	// 	}
-	// 	Assert.assertEquals(summaries.size(), 2);
+		ObjectListing listing = svc.listObjects( bucket_name);
+		List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+		while (listing.isTruncated()) {
+		   listing = svc.listNextBatchOfObjects (listing);
+		   summaries.addAll (listing.getObjectSummaries());
+		}
+		Assert.assertEquals(summaries.size(), 2);
 		
-	// }
-	
-	// @Test(description = "Upload of list of files to non existant bucket using HLAPI, fails!")
-	// public void testUploadFileListNoBucketHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
-		
-	// 	String bucket_name = utils.getBucketName(prefix);
-	// 	svc.createBucket(new CreateBucketRequest(bucket_name));
-	// 	String key = "key1";
-	// 	String dstDir = "./downloads";
-		
-	// 	try {
-			
-	// 		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-	// 	} catch (AmazonServiceException err) {
-	// 		AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
-	// 	}
-		
-	// }
+	}
 	
 	
 }
