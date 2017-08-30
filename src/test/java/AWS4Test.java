@@ -13,6 +13,7 @@ import org.testng.AssertJUnit;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonClientException;
@@ -50,7 +51,7 @@ public class AWS4Test {
 	String prefix = utils.getPrefix();
 	static Properties prop = new Properties();
 	
-	@BeforeClass
+	@AfterClass
 	public  void tearDownAfterClass() throws Exception {
 		
 		utils.tearDown(svc);	

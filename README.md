@@ -48,7 +48,6 @@ The tests connect to the Ceph RGW ,therefore you shoud have started your RGW and
 	
 Ubuntu
 
-	sudo add-apt-repository ppa:cwchien/gradle
 	sudo apt-get update
 	sudo apt-get install gradle
 
@@ -63,10 +62,5 @@ Fedora
 
 #### 2. Run the Tests
 
-	gradle test
-
-## ToDo
-
-+ Add Tests for my utility methods
-+ make S3 class singleton for performance
+	gradle clean test
 

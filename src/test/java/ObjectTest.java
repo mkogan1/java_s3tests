@@ -58,7 +58,7 @@ public class ObjectTest {
 	AmazonS3 svc = utils.getCLI();
 	String prefix = utils.getPrefix();
 
-	@BeforeClass
+	@AfterClass
 	public  void tearDownAfterClass() throws Exception {
 		
 		utils.tearDown(svc);	
