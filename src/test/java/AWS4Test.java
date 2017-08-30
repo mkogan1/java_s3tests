@@ -1092,21 +1092,28 @@ public class AWS4Test {
 	@Test(description = "Upload of list of files using HLAPI, suceeds!")
 	public void testUploadFileListHLAPIAWS4() throws AmazonServiceException, AmazonClientException, InterruptedException {
 		
-		String bucket_name = utils.getBucketName(prefix);
-		svc.createBucket(new CreateBucketRequest(bucket_name));
-		String key = "key1";
-		String dstDir = "./downloads";
+		try {
+
+			String bucket_name = utils.getBucketName(prefix);
+			svc.createBucket(new CreateBucketRequest(bucket_name));
+			String key = "key1";
+			String dstDir = "./downloads";
+			
+			MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
+			Assert.assertEquals(upl.isDone(), true);
+			
+			ObjectListing listing = svc.listObjects( bucket_name);
+			List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+			while (listing.isTruncated()) {
+			   listing = svc.listNextBatchOfObjects (listing);
+			   summaries.addAll (listing.getObjectSummaries());
+			}
+			Assert.assertEquals(summaries.size(), 2);
+
 		
-		MultipleFileUpload upl= utils.UploadFileListHLAPI(svc, bucket_name, key);
-		Assert.assertEquals(upl.isDone(), true);
-		
-		ObjectListing listing = svc.listObjects( bucket_name);
-		List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-		while (listing.isTruncated()) {
-		   listing = svc.listNextBatchOfObjects (listing);
-		   summaries.addAll (listing.getObjectSummaries());
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
-		Assert.assertEquals(summaries.size(), 2);
 		
 	}
 	
