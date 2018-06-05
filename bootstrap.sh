@@ -47,6 +47,7 @@ if [ ! -d /opt/gradle ]; then
 fi
 wget https://services.gradle.org/distributions/gradle-$version-bin.zip
 sudo unzip -o -d /opt/gradle gradle-$version-bin.zip
+rm -rf gradle-$version-bin.zip*
 export PATH=/opt/gradle/gradle-$version/bin:$PATH
 gradle -v
 
