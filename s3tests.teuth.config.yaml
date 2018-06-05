@@ -17,6 +17,9 @@ s3main :
     SSE : AES256
     kmskeyid : barbican_key_id
 
+    s3dir : folder
+    dir : '../data'
+
 s3alt :
     access_key : NOPQRSTUVWXYZABCDEFG
     access_secret : nopqrstuvwxyzabcdefghijklmnabcdefghijklm
@@ -27,3 +30,6 @@ s3alt :
     SSE : your SSE
     kmskeyid : barbican_key_id
     is_secure : false
+
+    s3dir : folder
+    dir : '../data'
