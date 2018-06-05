@@ -42,11 +42,11 @@ fi
 # Download and install Gradle
 version=4.7
 
-if [!(-d /opt/gradle)] then
+if [ ! -d /opt/gradle ]; then
     sudo mkdir /opt/gradle
-
+fi
 wget https://services.gradle.org/distributions/gradle-$version-bin.zip
-sudo unzip -d /opt/gradle gradle-$version-bin.zip
+sudo unzip -o -d /opt/gradle gradle-$version-bin.zip
 export PATH=/opt/gradle/gradle-$version/bin:$PATH
 gradle -v
 
