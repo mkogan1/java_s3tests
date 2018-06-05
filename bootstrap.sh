@@ -40,11 +40,14 @@ elif [ -f /etc/redhat-release ]; then
 fi
 
 # Download and install Gradle
+version=4.7
 
-wget https://services.gradle.org/distributions/gradle-4.7-bin.zip
-sudo mkdir /opt/gradle
-sudo unzip -d /opt/gradle gradle-4.7-bin.zip
-export PATH=$PATH:/opt/gradle/gradle-4.7/bin
+if [!(-d /opt/gradle)] then
+    sudo mkdir /opt/gradle
+
+wget https://services.gradle.org/distributions/gradle-$version-bin.zip
+sudo unzip -d /opt/gradle gradle-$version-bin.zip
+export PATH=/opt/gradle/gradle-$version/bin:$PATH
 gradle -v
 
 echo "S3 Tests Java END of running .bootstrap " 1>&2
