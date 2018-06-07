@@ -95,11 +95,11 @@ public class S3 {
 		String secretKey = prop.getProperty("access_secret");
 		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
 		
-		System.out.println(" JAVA Config is: ")
-		System.out.println(" %s", endpoint)
-		System.out.println(" %s", accessKey)
-		System.out.println(" %s", secretKey)
-		System.out.println(" %s", issecure)
+		System.out.println(" JAVA Config is: ");
+		System.out.println(" %s", endpoint);
+		System.out.println(" %s", accessKey);
+		System.out.println(" %s", secretKey);
+		System.out.println(" %s", issecure);
 
 		AmazonS3 svc = getConn(endpoint, accessKey, secretKey, issecure);
 
