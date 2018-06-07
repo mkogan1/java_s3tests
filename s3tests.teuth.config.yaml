@@ -1,7 +1,7 @@
 DEFAULT :
     host : 
     port : 
-    is_secure : 
+    is_secure : false
 
 fixtures :
     bucket_prefix : test
@@ -13,7 +13,7 @@ s3main :
     region : mexico
     display_name :
     email : 
-    is_secure : yes
+    is_secure : false
     SSE : AES256
     kmskeyid : barbican_key_id
 
@@ -29,7 +29,7 @@ s3alt :
     email : 
     SSE : AES256
     kmskeyid : barbican_key_id
-    is_secure : yes
+    is_secure : false
 
     s3dir : folder
     dir : '../data'
