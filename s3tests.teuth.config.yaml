@@ -4,7 +4,7 @@ DEFAULT :
     is_secure : 
 
 fixtures :
-    bucket_prefix : test-adam
+    bucket_prefix : test
 
 s3main :
     access_key : 0555b35654ad1656d804
@@ -13,7 +13,7 @@ s3main :
     region : mexico
     display_name :
     email : 
-    is_secure : false
+    is_secure : yes
     SSE : AES256
     kmskeyid : barbican_key_id
 
@@ -27,9 +27,9 @@ s3alt :
     region : mexico
     display_name :
     email : 
-    SSE : your SSE
+    SSE : AES256
     kmskeyid : barbican_key_id
-    is_secure : false
+    is_secure : yes
 
     s3dir : folder
     dir : '../data'

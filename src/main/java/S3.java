@@ -132,7 +132,7 @@ public class S3 {
 	
 	public String getPrefix()
 	{
-		String prefix = "jnan";
+		String prefix = "test";
 		
 		return prefix;
 	}
@@ -177,7 +177,6 @@ public class S3 {
 		if (issecure){
 			clientConfig.setProtocol(Protocol.HTTP);
 		}else {
-			
 			clientConfig.setProtocol(Protocol.HTTPS);
 		}
 		
