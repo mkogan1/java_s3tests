@@ -95,6 +95,8 @@ public class S3 {
 		String secretKey = prop.getProperty("access_secret");
 		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
 		
+		System.out.println("Config is:  %s   %s   %s   %b  ",  endpoint, accessKey, secretKey, issecure)
+
 		AmazonS3 svc = getConn(endpoint, accessKey, secretKey, issecure);
 
 		return svc;
