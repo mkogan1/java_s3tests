@@ -5,6 +5,6 @@ lib/
 bin/
 test-output/
 .project
-.settings 
-.vscode 
+.settings/ 
+.vscode/ 
 .classpath 
