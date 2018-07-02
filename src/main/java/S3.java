@@ -1,35 +1,32 @@
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
-import org.testng.SkipException;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.S3ClientOptions;
-import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyPartRequest;
 import com.amazonaws.services.s3.model.CopyPartResult;
 import com.amazonaws.services.s3.model.DeleteBucketRequest;
@@ -37,6 +34,7 @@ import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.ListBucketsRequest;
 import com.amazonaws.services.s3.model.ListVersionsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -53,333 +51,244 @@ import com.amazonaws.services.s3.transfer.MultipleFileDownload;
 import com.amazonaws.services.s3.transfer.MultipleFileUpload;
 import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.util.IOUtils;
 import com.amazonaws.util.StringUtils;
 
 public class S3 {
-	
 	private static S3 instance = null;
-	
+
 	protected S3() {
-	      
 	}
-	
+
 	public static S3 getInstance() {
-	  if(instance == null) {
-	         instance = new S3();
-	   }
-	   return instance;
+		if (instance == null) {
+			instance = new S3();
+		}
+		return instance;
 	}
-	
-	static Properties prop = new Properties();
-	InputStream input = null;
-	
-	AmazonS3 svc = getCLI();
-	
-	public AmazonS3 getCLI() {
-		
+
+	private Properties loadProperties() {
+		Properties prop = new Properties();
 		try {
-			input = new FileInputStream("config.properties");
+			InputStream input = new FileInputStream("config.properties");
 			try {
 				prop.load(input);
 			} catch (IOException e) {
-				
 				e.printStackTrace();
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		String endpoint = prop.getProperty("endpoint");
+		return prop;
+	}
+
+	private Properties prop = loadProperties();
+
+	public AmazonS3 getS3Client(Boolean isV4SignerType) {
 		String accessKey = prop.getProperty("access_key");
 		String secretKey = prop.getProperty("access_secret");
-		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
-		
-		System.out.printf(" JAVA Config is: ");
-		System.out.printf(" %s", endpoint);
-		System.out.printf(" %s", accessKey);
-		System.out.printf(" %s", secretKey);
-		System.out.printf(" %b", issecure);
+		boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
 
-		AmazonS3 svc = getConn(endpoint, accessKey, secretKey, issecure);
-
-		return svc;
-	}
-	
-	public AmazonS3 getAWS4CLI() {
-		
-		try {
-			input = new FileInputStream("config.properties");
-			try {
-				prop.load(input);
-			} catch (IOException e) {
-				
-				e.printStackTrace();
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+		AWSCredentialsProvider credentials = new AWSStaticCredentialsProvider(
+				new BasicAWSCredentials(accessKey, secretKey));
+		EndpointConfiguration epConfig = new AwsClientBuilder.EndpointConfiguration(prop.getProperty("endpoint"),
+				prop.getProperty("region"));
+		ClientConfiguration clientConfig = new ClientConfiguration();
+		if (isV4SignerType) {
+			clientConfig.setSignerOverride("AWSS3V4SignerType");
+		} else {
+			clientConfig.setSignerOverride("S3SignerType");
 		}
-		
-		String endpoint = prop.getProperty("endpoint");
-		String accessKey = prop.getProperty("access_key");
-		String secretKey = prop.getProperty("access_secret");
-		Boolean issecure = Boolean.parseBoolean(prop.getProperty("is_secure"));
-		
-		AmazonS3 svc = getAWS4Conn(endpoint, accessKey, secretKey, issecure);
+		if (issecure) {
+			clientConfig.setProtocol(Protocol.HTTPS);
+		} else {
+			clientConfig.setProtocol(Protocol.HTTP);
+		}
 
-		return svc;
+		clientConfig.withClientExecutionTimeout(10000);
+
+		System.out.printf("EP is_secure: %s - %b %n", prop.getProperty("endpoint"), issecure);
+
+		AmazonS3 s3client = AmazonS3ClientBuilder.standard().withCredentials(credentials)
+				.withEndpointConfiguration(epConfig).withClientConfiguration(clientConfig).enablePathStyleAccess()
+				.build();
+		return s3client;
 	}
-	
-	public String getPrefix()
-	{
-		String prefix = "test";
-		
+
+	public String getPrefix() {
+		String prefix;
+		if (prop.getProperty("bucket_prefix") != null) {
+			prefix = prop.getProperty("bucket_prefix");
+		} else {
+			prefix = "test-";
+		}
 		return prefix;
 	}
-	
-	
-	@SuppressWarnings("deprecation")
-	public AmazonS3 getConn(String endpoint,String accessKey, String secretKey,Boolean issecure) {
-		
-		ClientConfiguration clientConfig = new ClientConfiguration();
-		clientConfig.setSignerOverride("AWSS3V2SignerType");
-		AmazonS3ClientBuilder.standard().setEndpointConfiguration(
-				new AwsClientBuilder.EndpointConfiguration(endpoint, "mexico"));
-		
-		if (issecure){
-			clientConfig.setProtocol(Protocol.HTTP);
-		}else {
-			
-			clientConfig.setProtocol(Protocol.HTTP);
-		}
-		
-		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-		@SuppressWarnings("deprecation")
-		AmazonS3 s3client = new AmazonS3Client(credentials); //
 
-		s3client.setEndpoint(endpoint);
-
-		s3client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-		
-		
-		
-		return s3client;
-	}
-	
-	@SuppressWarnings("deprecation")
-	public AmazonS3 getAWS4Conn(String endpoint,String accessKey, String secretKey,Boolean issecure) {
-		
-		ClientConfiguration clientConfig = new ClientConfiguration();
-		clientConfig.setSignerOverride("AWSS3V4SignerType");
-		AmazonS3ClientBuilder.standard().setEndpointConfiguration(
-				new AwsClientBuilder.EndpointConfiguration(endpoint, "mexico"));
-		
-		if (issecure){
-			clientConfig.setProtocol(Protocol.HTTP);
-		}else {
-			clientConfig.setProtocol(Protocol.HTTPS);
-		}
-		
-		AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-		@SuppressWarnings("deprecation")
-		AmazonS3 s3client = new AmazonS3Client(credentials, clientConfig); 
-
-		s3client.setEndpoint(endpoint);
-
-		s3client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-		
-		return s3client;
-	}
-	
 	public String getBucketName(String prefix) {
-		
-		Random rand = new Random(); 
+		Random rand = new Random();
 		int num = rand.nextInt(50);
 		String randomStr = UUID.randomUUID().toString();
-		
+
 		return prefix + randomStr + num;
 	}
-	
+
 	public String getBucketName() {
-		String prefix = prop.getProperty("bucket_prefix");
-		
-		Random rand = new Random(); 
+		String prefix = getPrefix();
+		Random rand = new Random();
 		int num = rand.nextInt(50);
 		String randomStr = UUID.randomUUID().toString();
-		
+
 		return prefix + randomStr + num;
 	}
-	public String repeat(String str, int count){
-	    if(count <= 0) {return "";}
-	    return new String(new char[count]).replace("\0", str);
+
+	public String repeat(String str, int count) {
+		if (count <= 0) {
+			return "";
+		}
+		return new String(new char[count]).replace("\0", str);
 	}
-	
+
+	public Boolean isEPSecure() {
+		return Boolean.parseBoolean(prop.getProperty("is_secure"));
+	}
+
+	public int teradownRetries = 0;
+
 	public void tearDown(AmazonS3 svc) {
-		
-		java.util.List<Bucket> buckets = svc.listBuckets();
-		String prefix = getPrefix();
-		
-		for (Bucket b : buckets) {
-			
-			String bucket_name = b.getName();
-			
-			if (b.getName().startsWith(prefix)) {
-				
-				ObjectListing object_listing = svc.listObjects(b.getName());
-				while (true) {
-	                for (java.util.Iterator<S3ObjectSummary> iterator =
-	                        object_listing.getObjectSummaries().iterator();
-	                        iterator.hasNext();) {
-	                    S3ObjectSummary summary = (S3ObjectSummary)iterator.next();
-	                    svc.deleteObject(bucket_name, summary.getKey());
-	                }
+		if (teradownRetries > 0) {
+			try {
+				Thread.sleep(2500);
+			} catch (InterruptedException e) {
 
-	                if (object_listing.isTruncated()) {
-	                    object_listing = svc.listNextBatchOfObjects(object_listing);
-	                } else {
-	                    break;
-	                }
-	            };
-	            
-	            VersionListing version_listing = svc.listVersions(
-	                    new ListVersionsRequest().withBucketName(bucket_name));
-	            while (true) {
-	                for (java.util.Iterator<S3VersionSummary> iterator =
-	                        version_listing.getVersionSummaries().iterator();
-	                        iterator.hasNext();) {
-	                    S3VersionSummary vs = (S3VersionSummary)iterator.next();
-	                    svc.deleteVersion(
-	          
-	                  bucket_name, vs.getKey(), vs.getVersionId());
-	                }
+			}
+		}
+		try {
+			System.out.printf("TEARDOWN %n");
+			List<Bucket> buckets = svc.listBuckets(new ListBucketsRequest());
+			System.out.printf("Buckets list size: %d %n", buckets.size());
+			String prefix = getPrefix();
 
-	                if (version_listing.isTruncated()) {
-	                    version_listing = svc.listNextBatchOfVersions(
-	                            version_listing);
-	                } else {
-	                    break;
-	                }
-	            }
-			    svc.deleteBucket(new DeleteBucketRequest(b.getName()));
+			for (Bucket b : buckets) {
+				String bucket_name = b.getName();
+				if (b.getName().startsWith(prefix)) {
+					VersionListing version_listing = svc
+							.listVersions(new ListVersionsRequest().withBucketName(bucket_name));
+					while (true) {
+						for (java.util.Iterator<S3VersionSummary> iterator = version_listing.getVersionSummaries()
+								.iterator(); iterator.hasNext();) {
+							S3VersionSummary vs = (S3VersionSummary) iterator.next();
+							try {
+								svc.deleteVersion(bucket_name, vs.getKey(), vs.getVersionId());
+							} catch (AmazonServiceException e) {
+
+							} catch (SdkClientException e) {
+
+							}
+						}
+						if (version_listing.isTruncated()) {
+							version_listing = svc.listNextBatchOfVersions(version_listing);
+						} else {
+							break;
+						}
+					}
+
+					ObjectListing object_listing = svc.listObjects(b.getName());
+					while (true) {
+						for (java.util.Iterator<S3ObjectSummary> iterator = object_listing.getObjectSummaries()
+								.iterator(); iterator.hasNext();) {
+							S3ObjectSummary summary = (S3ObjectSummary) iterator.next();
+							System.out.printf("Deleting bucket/object: %s / %s %n", bucket_name, summary.getKey());
+							try {
+								svc.deleteObject(bucket_name, summary.getKey());
+							} catch (AmazonServiceException e) {
+
+							} catch (SdkClientException e) {
+
+							}
+						}
+						if (object_listing.isTruncated()) {
+							object_listing = svc.listNextBatchOfObjects(object_listing);
+						} else {
+							break;
+						}
+					}
+					try {
+						svc.deleteBucket(new DeleteBucketRequest(b.getName()));
+						System.out.printf("Deleted bucket: %s  %n", bucket_name);
+					} catch (AmazonServiceException e) {
+
+					} catch (SdkClientException e) {
+
+					}
+				}
+			}
+		} catch (AmazonServiceException e) {
+
+		} catch (SdkClientException e) {
+			if (teradownRetries < 1) {
+				tearDown(svc);
+				++teradownRetries;
 			}
 		}
 	}
-	
-	private static SecretKey generateSecretKey() {
-        try {
-            KeyGenerator generator = KeyGenerator.getInstance("AES");
-            generator.init(256);
-            return generator.generateKey();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-            return null;
-        }
-    }
-	
+
 	public String[] EncryptionSseCustomerWrite(AmazonS3 svc, int file_size) {
-		
-		String prefix = prop.getProperty("bucket_prefix");
+
+		String prefix = getPrefix();
 		String bucket_name = getBucketName(prefix);
-		String key ="key1";
+		String key = "key1";
 		String data = repeat("testcontent", file_size);
-		
-		svc.createBucket(bucket_name);	
-		
-		SecretKey secretKey = generateSecretKey();
-        SSECustomerKey sseKey = new SSECustomerKey(secretKey);
-		
-		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data).withSSECustomerKey(sseKey);
+		InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+		svc.createBucket(bucket_name);
+
 		ObjectMetadata objectMetadata = new ObjectMetadata();
 		objectMetadata.setContentLength(data.length());
-		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key", "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "DWygnHRtgiJ77HCm+1rvHw==");
-		putRequest.setMetadata(objectMetadata);
+		objectMetadata.setContentType("text/plain");
+		objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+				"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+		objectMetadata.setSSECustomerKeyMd5("DWygnHRtgiJ77HCm+1rvHw==");
+		objectMetadata.setSSECustomerAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+
 		svc.putObject(putRequest);
-		
-		
-		String rdata = svc.getObjectAsString(bucket_name, key);
-		
-		//trying to return two values
-		String arr[] = new String[2];
-        arr[0]= data;
-        arr[1] =  rdata;
-		
-		return arr;
-				
-	}
-	
-	public String[] EncryptionSseKMSCustomerWrite(AmazonS3 svc, int file_size, String keyId) {
-		
-		String prefix = prop.getProperty("bucket_prefix");
-		String bucket_name = getBucketName(prefix);
-		String key ="key1";
-		String data = repeat("testcontent", file_size);
-		
-		if (keyId == "") {
-			keyId = "testkey-1";
+
+		SSECustomerKey skey = new SSECustomerKey("pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+		GetObjectRequest getRequest = new GetObjectRequest(bucket_name, key);
+		getRequest.withSSECustomerKey(skey);
+
+		InputStream inputStream = svc.getObject(getRequest).getObjectContent();
+		String rdata = null;
+		try {
+			rdata = IOUtils.toString(inputStream);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
-		
-		svc.createBucket(bucket_name);	
-		
-		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, data);
-		ObjectMetadata objectMetadata = new ObjectMetadata();
-		objectMetadata.setContentLength(file_size);
-		objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
-		objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId );
-		putRequest.setMetadata(objectMetadata);
-		svc.putObject(putRequest);
-		
-		
-		String rdata = svc.getObjectAsString(bucket_name, key);
-		
-		//trying to return two values
+
 		String arr[] = new String[2];
-        arr[0]= data;
-        arr[1] =  rdata;
-		
+		arr[0] = data;
+		arr[1] = rdata;
+
 		return arr;
-				
 	}
 
 	public Bucket createKeys(AmazonS3 svc, String[] keys) {
-		
 		String prefix = prop.getProperty("bucket_prefix");
 		String bucket_name = getBucketName(prefix);
 		Bucket bucket = svc.createBucket(bucket_name);
-		
+
 		for (String k : keys) {
-			
 			svc.putObject(bucket.getName(), k, k);
-			
 		}
-		
-		return bucket;		
+		return bucket;
 	}
-	
-	public ObjectMetadata getSetMetadata(AmazonS3 svc, String bucket_name, String metadata) {
-		
-		String content = "testcontent";
-		String key = "key1";
-		
-		svc.createBucket(bucket_name);
-		byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-		InputStream is = new ByteArrayInputStream(contentBytes);
-		
-		ObjectMetadata mdata = new ObjectMetadata();
-		mdata.setContentLength(contentBytes.length);
-		mdata.addUserMetadata("Mymeta", metadata);
-		
-		svc.putObject(new PutObjectRequest(bucket_name, key, is, mdata));
-		
-		S3Object resp = svc.getObject(new GetObjectRequest(bucket_name, key));
-		
-		return resp.getObjectMetadata();
-	}
-	
-	public <PartETag> CompleteMultipartUploadRequest multipartUploadLLAPI(AmazonS3 svc, String bucket, String key, long size, String filePath) {
-		
+
+	public <PartETag> CompleteMultipartUploadRequest multipartUploadLLAPI(AmazonS3 svc, String bucket, String key,
+			long size, String filePath) {
+
 		List<PartETag> partETags = new ArrayList<PartETag>();
 
 		InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(bucket, key);
@@ -389,195 +298,171 @@ public class S3 {
 		long contentLength = file.length();
 		long partSize = size;
 
-		
-			
-		    long filePosition = 0;
-		    for (int i = 1; filePosition < contentLength; i++) {
-		    	
-		    	partSize = Math.min(partSize, (contentLength - filePosition));
-		    	
-		        // Create request to upload a part.
-		        UploadPartRequest uploadRequest = new UploadPartRequest()
-		            .withBucketName(bucket).withKey(key)
-		            .withUploadId(initResponse.getUploadId()).withPartNumber(i)
-		            .withFileOffset(filePosition)
-		            .withFile(file)
-		            .withPartSize(partSize);
-		        
-		        partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
+		long filePosition = 0;
+		for (int i = 1; filePosition < contentLength; i++) {
+			partSize = Math.min(partSize, (contentLength - filePosition));
+			UploadPartRequest uploadRequest = new UploadPartRequest().withBucketName(bucket).withKey(key)
+					.withUploadId(initResponse.getUploadId()).withPartNumber(i).withFileOffset(filePosition)
+					.withFile(file).withPartSize(partSize);
 
-		        filePosition += partSize;
-		    }
+			partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
 
-		    CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket, key, 
-		                                               initResponse.getUploadId(), 
-		                                               (List<com.amazonaws.services.s3.model.PartETag>) partETags);
-		    
-		    return compRequest;
-		    
-	}
-	
-	public CompleteMultipartUploadRequest multipartCopyLLAPI(AmazonS3 svc,String dstbkt, String dstkey, String srcbkt, String srckey,long size) {
-		
-		List<CopyPartResult> copyResponses =new ArrayList<CopyPartResult>();
-		
-		InitiateMultipartUploadRequest initiateRequest = new InitiateMultipartUploadRequest(dstbkt, dstkey);
-	        
-	    InitiateMultipartUploadResult initResult = svc.initiateMultipartUpload(initiateRequest);
-
-	      
-	    GetObjectMetadataRequest metadataRequest = new GetObjectMetadataRequest(srcbkt, srckey);
-
-	            ObjectMetadata metadataResult = svc.getObjectMetadata(metadataRequest);
-	            long objectSize = metadataResult.getContentLength(); // in bytes
-
-	            // Copy parts.
-	            long partSize = 5 * (long)Math.pow(2.0, 20.0); // 5 MB
-
-	            long bytePosition = 0;
-	            for (int i = 1; bytePosition < objectSize; i++)
-	            {
-	            	CopyPartRequest copyRequest = new CopyPartRequest()
-	                   .withDestinationBucketName(dstbkt)
-	                   .withDestinationKey(dstkey)
-	                   .withSourceBucketName(srcbkt)
-	                   .withSourceKey(srckey)
-	                   .withUploadId(initResult.getUploadId())
-	                   .withFirstByte(bytePosition)
-	                   .withLastByte(bytePosition + partSize -1 >= objectSize ? objectSize - 1 : bytePosition + partSize - 1) 
-	                   .withPartNumber(i);
-
-	                copyResponses.add(svc.copyPart(copyRequest));
-	                bytePosition += partSize;
-
-	            }
-	            CompleteMultipartUploadRequest completeRequest = new 
-	            	CompleteMultipartUploadRequest(
-	            			dstbkt,
-	            			dstkey,
-	            			initResult.getUploadId(),
-	            			GetETags(copyResponses));
-
-	            
-	        
-	        
-	        return completeRequest;
-	     
-	}
-	
-	static List<com.amazonaws.services.s3.model.PartETag> GetETags(List<CopyPartResult> responses)
-    {
-        List<com.amazonaws.services.s3.model.PartETag> etags = new ArrayList<com.amazonaws.services.s3.model.PartETag>();
-        for (CopyPartResult response : responses)
-        {
-            etags.add(new com.amazonaws.services.s3.model.PartETag(response.getPartNumber(), response.getETag()));
-        }
-        return etags;
-    } 
-	
-	public Copy multipartCopyHLAPI(AmazonS3 svc,String dstbkt, String dstkey, String srcbkt, String srckey) {
-	
-		 @SuppressWarnings("deprecation")
-			TransferManager tm = new TransferManager(svc);  
-	        Copy copy = tm.copy(srcbkt, srckey, dstbkt, dstkey);
-	        try {
-				try {
-					copy.waitForCompletion();
-				} catch (InterruptedException e) {
-					
-				}
-			} catch (AmazonClientException amazonClientException) {
-				
-				
-			}
-			
-	        return copy;
-			
-	}
-	
-	public Download downloadHLAPI(AmazonS3 svc,String bucket, String key, File file) {
-		
-		 @SuppressWarnings("deprecation")
-			TransferManager tm = new TransferManager(svc);  
-	        Download download = tm.download(bucket, key, file);
-	        try {
-				try {
-					download.waitForCompletion();
-				} catch (InterruptedException e) {
-					
-				}
-			} catch (AmazonClientException amazonClientException) {
-				
-				
-			}
-			
-	        return download;	
-	}
-	
-	public MultipleFileDownload multipartDownloadHLAPI(AmazonS3 svc,String bucket, String key, File dstDir) {
-		
-		 @SuppressWarnings("deprecation")
-		TransferManager tm = new TransferManager(svc);  
-		 	MultipleFileDownload download = tm.downloadDirectory(bucket, key, dstDir);
-	        try {
-				try {
-					download.waitForCompletion();
-				} catch (InterruptedException e) {
-					
-				}
-			} catch (AmazonClientException amazonClientException) {
-				
-				
-			}
-			
-	        return download;	
-	}
-	
-	public Upload UploadFileHLAPI(AmazonS3 svc,String bucket, String key, String filePath) { 
-        
-        @SuppressWarnings("deprecation")
-		TransferManager tm = new TransferManager(svc);  
-        Upload upload = tm.upload(bucket, key, new File(filePath));
-        try {
-			try {
-				upload.waitForCompletion();
-			} catch (InterruptedException e) {
-				
-			}
-		} catch (AmazonClientException amazonClientException) {
-			
-			
+			filePosition += partSize;
 		}
-		
-        return upload;
+
+		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket, key,
+				initResponse.getUploadId(), (List<com.amazonaws.services.s3.model.PartETag>) partETags);
+
+		return compRequest;
 	}
-	
-	public MultipleFileUpload UploadFileListHLAPI(AmazonS3 svc, String bucket, String key) throws AmazonServiceException, AmazonClientException, InterruptedException { 
-        
-	    ArrayList<File> files = new ArrayList<File>();
-	    files.add(new File("./data/file.mpg"));
-	    files.add(new File("./data/sample.txt"));
-	    
-	    TransferManager xfer_mgr = new TransferManager(svc);
-	    MultipleFileUpload xfer = xfer_mgr.uploadFileList(bucket, key, new File("."), files);
-	    xfer.waitForCompletion();
-	    
-	    return xfer;
+
+	public CompleteMultipartUploadRequest multipartCopyLLAPI(AmazonS3 svc, String dstbkt, String dstkey, String srcbkt,
+			String srckey, long size) {
+
+		List<CopyPartResult> copyResponses = new ArrayList<CopyPartResult>();
+
+		InitiateMultipartUploadRequest initiateRequest = new InitiateMultipartUploadRequest(dstbkt, dstkey);
+		InitiateMultipartUploadResult initResult = svc.initiateMultipartUpload(initiateRequest);
+		GetObjectMetadataRequest metadataRequest = new GetObjectMetadataRequest(srcbkt, srckey);
+
+		ObjectMetadata metadataResult = svc.getObjectMetadata(metadataRequest);
+		long objectSize = metadataResult.getContentLength(); // in bytes
+
+		long partSize = 5 * 1024 * 1024;
+
+		long bytePosition = 0;
+		for (int i = 1; bytePosition < objectSize; i++) {
+			CopyPartRequest copyRequest = new CopyPartRequest().withDestinationBucketName(dstbkt)
+					.withDestinationKey(dstkey).withSourceBucketName(srcbkt).withSourceKey(srckey)
+					.withUploadId(initResult.getUploadId()).withFirstByte(bytePosition)
+					.withLastByte(
+							bytePosition + partSize - 1 >= objectSize ? objectSize - 1 : bytePosition + partSize - 1)
+					.withPartNumber(i);
+
+			copyResponses.add(svc.copyPart(copyRequest));
+			bytePosition += partSize;
+		}
+		CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest(dstbkt, dstkey,
+				initResult.getUploadId(), GetETags(copyResponses));
+
+		return completeRequest;
 	}
-	
-	public Transfer multipartUploadHLAPI(AmazonS3 svc, String bucket, String s3target, String directory) throws AmazonServiceException, AmazonClientException, InterruptedException { 
-        
-		@SuppressWarnings("deprecation")
-		TransferManager tm = new TransferManager(svc);
+
+	static List<com.amazonaws.services.s3.model.PartETag> GetETags(List<CopyPartResult> responses) {
+		List<com.amazonaws.services.s3.model.PartETag> etags = new ArrayList<com.amazonaws.services.s3.model.PartETag>();
+		for (CopyPartResult response : responses) {
+			etags.add(new com.amazonaws.services.s3.model.PartETag(response.getPartNumber(), response.getETag()));
+		}
+		return etags;
+	}
+
+	public void waitForCompletion(Transfer xfer) {
+		try {
+			xfer.waitForCompletion();
+		} catch (AmazonServiceException e) {
+
+		} catch (AmazonClientException e) {
+
+		} catch (InterruptedException e) {
+
+		}
+	}
+
+	public Copy multipartCopyHLAPI(AmazonS3 svc, String dstbkt, String dstkey, String srcbkt, String srckey) {
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		Copy copy = tm.copy(srcbkt, srckey, dstbkt, dstkey);
+		try {
+			waitForCompletion(copy);
+		} catch (AmazonServiceException e) {
+
+		}
+		return copy;
+	}
+
+	public Download downloadHLAPI(AmazonS3 svc, String bucket, String key, File file) {
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		Download download = tm.download(bucket, key, file);
+		try {
+			waitForCompletion(download);
+		} catch (AmazonServiceException e) {
+
+		}
+		return download;
+	}
+
+	public MultipleFileDownload multipartDownloadHLAPI(AmazonS3 svc, String bucket, String key, File dstDir) {
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		MultipleFileDownload download = tm.downloadDirectory(bucket, key, dstDir);
+		try {
+			waitForCompletion(download);
+		} catch (AmazonServiceException e) {
+
+		}
+		return download;
+	}
+
+	public Upload UploadFileHLAPI(AmazonS3 svc, String bucket, String key, String filePath) {
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		Upload upload = tm.upload(bucket, key, new File(filePath));
+		try {
+			waitForCompletion(upload);
+		} catch (AmazonServiceException e) {
+
+		}
+		return upload;
+	}
+
+	public MultipleFileUpload UploadFileListHLAPI(AmazonS3 svc, String bucket, String key)
+			throws AmazonServiceException, AmazonClientException, InterruptedException {
+
+		ArrayList<File> files = new ArrayList<File>();
+
+		String fname1 = "./data/file.mpg";
+		String fname2 = "./data/sample.txt";
+		createFile(fname1, 20 * 1024 * 1024);
+		createFile(fname2, 20 * 1024);
+		files.add(new File(fname1));
+		files.add(new File(fname2));
+
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		MultipleFileUpload xfer = tm.uploadFileList(bucket, key, new File("."), files);
+		try {
+			waitForCompletion(xfer);
+		} catch (AmazonServiceException e) {
+
+		}
+		return xfer;
+	}
+
+	public Transfer multipartUploadHLAPI(AmazonS3 svc, String bucket, String s3target, String directory)
+			throws AmazonServiceException, AmazonClientException, InterruptedException {
+
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
 		Transfer t = tm.uploadDirectory(bucket, s3target, new File(directory), false);
-	    try {
-	      t.waitForCompletion();
-	    } finally {
-	      tm.shutdownNow(false);
-	    }
-	    
-	    return t;
-		
+		try {
+			waitForCompletion(t);
+		} catch (AmazonServiceException e) {
+
+		}
+		return t;
 	}
-	
+
+	public void createFile(String fname, int size) {
+		Random rand = new Random();
+		byte[] myByteArray = new byte[size];
+		rand.nextBytes(myByteArray);
+		try {
+			File f = new File(fname);
+			if (f.exists() && !f.isDirectory()) {
+				f.delete();
+			}
+			FileOutputStream fos = new FileOutputStream(fname);
+			fos.write(myByteArray);
+		} catch (FileNotFoundException e) {
+
+		} catch (IOException e) {
+
+		}
+	}
+
 }
