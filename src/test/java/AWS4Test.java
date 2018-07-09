@@ -563,6 +563,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024,
 				filePath);
@@ -597,6 +598,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
@@ -612,6 +614,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		List<PartETag> partETags = new ArrayList<PartETag>();
@@ -667,6 +670,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
@@ -682,6 +686,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		svc.putObject(bucket_name, key, "foo");
@@ -701,6 +706,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/sample.txt";
+		utils.createFile(filePath, 20 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		try {
@@ -723,6 +729,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(dst_bkt));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 
@@ -760,6 +767,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 
 		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
 
@@ -823,7 +831,8 @@ public class AWS4Test {
 
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
-		String dir = "./data/file.mpg";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		String key = "key1";
 
 		// sets small upload threshold and upload parts size in order to keep the first
@@ -831,7 +840,7 @@ public class AWS4Test {
 		// when trying to pause it
 		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc)
 				.withMultipartUploadThreshold(256 * 1024l).withMinimumUploadPartSize(256 * 1024l).build();
-		Upload myUpload = tm.upload(bucket_name, key, new File(dir));
+		Upload myUpload = tm.upload(bucket_name, key, new File(filePath));
 
 		// pause upload
 		TransferProgress progress = myUpload.getProgress();
@@ -996,6 +1005,7 @@ public class AWS4Test {
 		String dstDir = "./downloads";
 
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 
@@ -1011,6 +1021,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 		String key = "key1";
 		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 40 * 1024 * 1024);
 		String destPath = "./data/file2.mpg";
 
 		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc)
