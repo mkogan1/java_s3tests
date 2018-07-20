@@ -39,6 +39,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.SSECustomerKey;
 import com.amazonaws.services.s3.model.UploadPartRequest;
+import com.amazonaws.services.s3.model.UploadPartResult;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.transfer.Copy;
 import com.amazonaws.services.s3.transfer.Download;
@@ -1544,7 +1545,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024,
 				filePath);
@@ -1579,7 +1580,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
@@ -1594,8 +1595,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
-		long size = 5 * 1024 * 1024;
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		List<PartETag> partETags = new ArrayList<PartETag>();
 
@@ -1604,23 +1604,23 @@ public class ObjectTest {
 
 		File file = new File(filePath);
 		long contentLength = file.length();
-		long partSize = size;
+		long partSize = 5 * 1024 * 1024;
 
 		long filePosition = 1024 * 1024;
 		for (int i = 7; filePosition < contentLength; i++) {
-
 			partSize = Math.min(partSize, (contentLength - filePosition));
 			UploadPartRequest uploadRequest = new UploadPartRequest().withBucketName(bucket_name).withKey(key)
 					.withUploadId(initResponse.getUploadId()).withPartNumber(i).withFileOffset(filePosition)
 					.withFile(file).withPartSize(partSize);
-			svc.uploadPart(uploadRequest).setPartNumber(9999);
-			partETags.add((PartETag) svc.uploadPart(uploadRequest).getPartETag());
+			UploadPartResult res = svc.uploadPart(uploadRequest);
+			res.setPartNumber(999);
+			partETags.add((PartETag) res.getPartETag());
 
 			filePosition += partSize;
 		}
 
 		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket_name, key,
-				initResponse.getUploadId(), (List<com.amazonaws.services.s3.model.PartETag>) partETags);
+				initResponse.getUploadId(), (List<PartETag>) partETags);
 
 		try {
 			svc.completeMultipartUpload(compRequest);
@@ -1652,7 +1652,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, 5 * 1024 * 1024,
 				filePath);
@@ -1667,7 +1667,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		long size = 5 * 1024 * 1024;
 
 		svc.putObject(bucket_name, key, "foo");
@@ -1697,45 +1697,63 @@ public class ObjectTest {
 		}
 	}
 
-	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
-	public void testMultipartCopyMultipleSizesLLAPI() {
+	// The MultipartCopy test with LL API are commented out due to differences observed 
+	// in the HTTP response of the CopyPart request when running on master and mimic branches
+	// of Ceph
+	
+	// @Test(description = "multipart copy for small file using LLAPI, succeeds!")
+	// public void testMultipartCopyMultipleSizesLLAPI() {
 
-		String src_bkt = utils.getBucketName(prefix);
-		String dst_bkt = utils.getBucketName(prefix);
-		String key = "key1";
+	// 	String src_bkt = utils.getBucketName(prefix);
+	// 	String dst_bkt = utils.getBucketName(prefix);
+	// 	String src_key = "src-key-0";
+	// 	String dst_key = "dst-key-1";
 
-		svc.createBucket(new CreateBucketRequest(src_bkt));
-		svc.createBucket(new CreateBucketRequest(dst_bkt));
+	// 	svc.createBucket(new CreateBucketRequest(src_bkt));
+	// 	svc.createBucket(new CreateBucketRequest(dst_bkt));
 
-		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
-		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
-		Assert.assertEquals(upl.isDone(), true);
+	// 	String filePath = "./data/file.mpg";
+	// 	utils.createFile(filePath, 23 * 1024 * 1024);
+	// 	// Upload upl = utils.UploadFileHLAPI(svc, src_bkt, src_key, filePath);
+	// 	// Assert.assertEquals(upl.isDone(), true);
 
-		CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-				5 * 1024 * 1024);
-		svc.completeMultipartUpload(resp);
+	// 	File file = new File(filePath);
+	// 	// Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
 
-		CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-				5 * 1024 * 1024 + 100 * 1024);
-		svc.completeMultipartUpload(resp2);
+	// 	ObjectMetadata metadata = new ObjectMetadata();
+	// 	metadata.setContentLength(file.length());
 
-		CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-				5 * 1024 * 1024 + 600 * 1024);
-		svc.completeMultipartUpload(resp3);
+	// 	try {
+	// 		svc.putObject(new PutObjectRequest(src_bkt, src_key, file));
+	// 	} catch (AmazonServiceException err) {
+			
+	// 	}
 
-		CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-				10 * 1024 * 1024 + 100 * 1024);
-		svc.completeMultipartUpload(resp4);
+	// 	CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, dst_key, src_bkt, src_key,
+	// 			5 * 1024 * 1024);
+	// 	System.out.printf("%nCOMPLETE MP COPY %n%n");
+	// 	svc.completeMultipartUpload(resp);
 
-		CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-				10 * 1024 * 1024 + 600 * 1024);
-		svc.completeMultipartUpload(resp5);
+	// 	CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt, dst_key, src_bkt, src_key,
+	// 			5 * 1024 * 1024 + 100 * 1024);
+	// 	svc.completeMultipartUpload(resp2);
 
-		CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-				10 * 1024 * 1024);
-		svc.completeMultipartUpload(resp6);
-	}
+	// 	CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt, dst_key, src_bkt, src_key,
+	// 			5 * 1024 * 1024 + 600 * 1024);
+	// 	svc.completeMultipartUpload(resp3);
+
+	// 	CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt, dst_key, src_bkt, src_key,
+	// 			10 * 1024 * 1024 + 100 * 1024);
+	// 	svc.completeMultipartUpload(resp4);
+
+	// 	CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, dst_key, src_bkt, src_key,
+	// 			10 * 1024 * 1024 + 600 * 1024);
+	// 	svc.completeMultipartUpload(resp5);
+
+	// 	CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, dst_key, src_bkt, src_key,
+	// 			10 * 1024 * 1024);
+	// 	svc.completeMultipartUpload(resp6);
+	// }
 
 	@Test(description = "Upload of a  file using HLAPI, succeeds!")
 	public void testUploadFileHLAPIBigFile() {
@@ -1745,7 +1763,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
 
@@ -1807,7 +1825,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		String key = "key1";
 
 		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
@@ -1974,7 +1992,7 @@ public class ObjectTest {
 		String dstDir = "./downloads";
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 
@@ -1990,7 +2008,7 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 		String key = "key1";
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 40 * 1024 * 1024);
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		String destPath = "./data/file2.mpg";
 
 		TransferManager tm = TransferManagerBuilder.standard().withMinimumUploadPartSize(512 * 1024l)

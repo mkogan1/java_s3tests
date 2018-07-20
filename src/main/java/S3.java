@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,7 @@ import com.amazonaws.services.s3.model.ListVersionsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.SSECustomerKey;
@@ -54,7 +53,6 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.IOUtils;
-import com.amazonaws.util.StringUtils;
 
 public class S3 {
 	private static S3 instance = null;
@@ -107,7 +105,12 @@ public class S3 {
 			clientConfig.setProtocol(Protocol.HTTP);
 		}
 
-		clientConfig.withClientExecutionTimeout(10000);
+		clientConfig.setClientExecutionTimeout(600 * 1000);
+		// clientConfig.setRequestTimeout(10 * 1000);
+		clientConfig.withConnectionTimeout(600 * 1000);
+		clientConfig.withSocketTimeout(600 * 1000);
+		// Allow as many retries as possible until the client execution timeout expires
+		clientConfig.setMaxErrorRetry(Integer.MAX_VALUE);
 
 		System.out.printf("EP is_secure: %s - %b %n", prop.getProperty("endpoint"), issecure);
 
@@ -228,9 +231,9 @@ public class S3 {
 		} catch (AmazonServiceException e) {
 
 		} catch (SdkClientException e) {
-			if (teradownRetries < 1) {
-				tearDown(svc);
+			if (teradownRetries < 10) {
 				++teradownRetries;
+				tearDown(svc);
 			}
 		}
 	}
@@ -265,7 +268,7 @@ public class S3 {
 		try {
 			rdata = IOUtils.toString(inputStream);
 		} catch (IOException e) {
-			e.printStackTrace();
+			// e.printStackTrace();
 		}
 
 		String arr[] = new String[2];
@@ -286,7 +289,7 @@ public class S3 {
 		return bucket;
 	}
 
-	public <PartETag> CompleteMultipartUploadRequest multipartUploadLLAPI(AmazonS3 svc, String bucket, String key,
+	public CompleteMultipartUploadRequest multipartUploadLLAPI(AmazonS3 svc, String bucket, String key,
 			long size, String filePath) {
 
 		List<PartETag> partETags = new ArrayList<PartETag>();
@@ -311,15 +314,13 @@ public class S3 {
 		}
 
 		CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(bucket, key,
-				initResponse.getUploadId(), (List<com.amazonaws.services.s3.model.PartETag>) partETags);
+				initResponse.getUploadId(), (List<PartETag>) partETags);
 
 		return compRequest;
 	}
 
 	public CompleteMultipartUploadRequest multipartCopyLLAPI(AmazonS3 svc, String dstbkt, String dstkey, String srcbkt,
 			String srckey, long size) {
-
-		List<CopyPartResult> copyResponses = new ArrayList<CopyPartResult>();
 
 		InitiateMultipartUploadRequest initiateRequest = new InitiateMultipartUploadRequest(dstbkt, dstkey);
 		InitiateMultipartUploadResult initResult = svc.initiateMultipartUpload(initiateRequest);
@@ -328,30 +329,34 @@ public class S3 {
 		ObjectMetadata metadataResult = svc.getObjectMetadata(metadataRequest);
 		long objectSize = metadataResult.getContentLength(); // in bytes
 
-		long partSize = 5 * 1024 * 1024;
+		long partSize = size;
 
 		long bytePosition = 0;
-		for (int i = 1; bytePosition < objectSize; i++) {
+		int partNum = 1;
+
+		List<PartETag> partETags = new ArrayList<PartETag>();
+		while (bytePosition < objectSize) {
+			long lastByte = Math.min(bytePosition + partSize - 1, objectSize - 1);
 			CopyPartRequest copyRequest = new CopyPartRequest().withDestinationBucketName(dstbkt)
 					.withDestinationKey(dstkey).withSourceBucketName(srcbkt).withSourceKey(srckey)
 					.withUploadId(initResult.getUploadId()).withFirstByte(bytePosition)
-					.withLastByte(
-							bytePosition + partSize - 1 >= objectSize ? objectSize - 1 : bytePosition + partSize - 1)
-					.withPartNumber(i);
+					.withLastByte(lastByte)
+					.withPartNumber(partNum++);
 
-			copyResponses.add(svc.copyPart(copyRequest));
+			CopyPartResult res = svc.copyPart(copyRequest);
+			partETags.add(res.getPartETag());
 			bytePosition += partSize;
 		}
 		CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest(dstbkt, dstkey,
-				initResult.getUploadId(), GetETags(copyResponses));
+				initResult.getUploadId(), partETags);
 
 		return completeRequest;
 	}
 
-	static List<com.amazonaws.services.s3.model.PartETag> GetETags(List<CopyPartResult> responses) {
-		List<com.amazonaws.services.s3.model.PartETag> etags = new ArrayList<com.amazonaws.services.s3.model.PartETag>();
+	static List<PartETag> GetETags(List<CopyPartResult> responses) {
+		List<PartETag> etags = new ArrayList<PartETag>();
 		for (CopyPartResult response : responses) {
-			etags.add(new com.amazonaws.services.s3.model.PartETag(response.getPartNumber(), response.getETag()));
+			etags.add(new PartETag(response.getPartNumber(), response.getETag()));
 		}
 		return etags;
 	}
@@ -360,11 +365,11 @@ public class S3 {
 		try {
 			xfer.waitForCompletion();
 		} catch (AmazonServiceException e) {
-
+			// e.printStackTrace();
 		} catch (AmazonClientException e) {
-
+			// e.printStackTrace();
 		} catch (InterruptedException e) {
-
+			// e.printStackTrace();
 		}
 	}
 
@@ -419,8 +424,8 @@ public class S3 {
 
 		String fname1 = "./data/file.mpg";
 		String fname2 = "./data/sample.txt";
-		createFile(fname1, 20 * 1024 * 1024);
-		createFile(fname2, 20 * 1024);
+		createFile(fname1, 23 * 1024 * 1024);
+		createFile(fname2, 256 * 1024);
 		files.add(new File(fname1));
 		files.add(new File(fname2));
 
