@@ -66,6 +66,7 @@ public class AWS4Test {
 
 	@BeforeMethod
 	public void setUp() throws Exception {
+		utils.teradownRetries = 0;
 		utils.tearDown(svc);
 	}
 
