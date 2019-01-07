@@ -1268,10 +1268,8 @@ public class ObjectTest {
 		Assert.assertEquals(list.isEmpty(), true);
 	}
 
-	@Test(description = "object list) w/ negative maxkeys, suceeds")
+	@Test(description = "object list w/ negative maxkeys, suceeds")
 	public void testObjectListMaxkeysNegative() {
-
-		// passes..wonder blandar
 
 		String[] keys = { "bar", "baz", "foo", "quxx" };
 
@@ -1279,8 +1277,8 @@ public class ObjectTest {
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(-1);
 		ListObjectsV2Result result = svc.listObjectsV2(req);
 
-		Assert.assertEquals(result.getMaxKeys(), -1);
-		Assert.assertEquals(result.isTruncated(), true);
+		Assert.assertEquals(result.getMaxKeys(), 0);
+		Assert.assertEquals(result.isTruncated(), false);
 
 		Object[] k = new Object[] {};
 		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
