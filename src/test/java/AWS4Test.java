@@ -11,6 +11,7 @@ import java.util.Properties;
 import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
@@ -51,6 +52,14 @@ public class AWS4Test {
 	AmazonS3 svc = utils.getS3Client(useV4Signature);
 	String prefix = utils.getPrefix();
 	static Properties prop = new Properties();
+
+	@BeforeClass
+	public void generateFiles(){
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
+		filePath = "./data/file.txt";
+		utils.createFile(filePath, 256 * 1024);	
+	}
 
 	@AfterClass
 	public void tearDownAfterClass() throws Exception {
@@ -568,7 +577,7 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 23 * 1024 * 1024);
+		utils.createFile(filePath, 53 * 1024 * 1024);
 
 		CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, 
 				5 * 1024 * 1024, filePath);
@@ -723,59 +732,54 @@ public class AWS4Test {
 
 	}
 
-	// The MultipartCopy test with LL API are commented out due to differences observed 
-	// in the HTTP response of the CopyPart request when running on master and mimic branches
-	// of Ceph
+	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
+	public void testMultipartCopyMultipleSizesLLAPIAWS4() {
 
-	// @Test(description = "multipart copy for small file using LLAPI, succeeds!")
-	// public void testMultipartCopyMultipleSizesLLAPIAWS4() {
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String key = "key1";
 
-	// 	String src_bkt = utils.getBucketName(prefix);
-	// 	String dst_bkt = utils.getBucketName(prefix);
-	// 	String key = "key1";
+		svc.createBucket(new CreateBucketRequest(src_bkt));
+		svc.createBucket(new CreateBucketRequest(dst_bkt));
 
-	// 	svc.createBucket(new CreateBucketRequest(src_bkt));
-	// 	svc.createBucket(new CreateBucketRequest(dst_bkt));
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
+		File file = new File(filePath);
 
-	// 	String filePath = "./data/file.mpg";
-	// 	utils.createFile(filePath, 23 * 1024 * 1024);
-	// 	File file = new File(filePath);
-	// 	// Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(file.length());
 
-	// 	ObjectMetadata metadata = new ObjectMetadata();
-	// 	metadata.setContentLength(file.length());
-
-	// 	try {
-	// 		svc.putObject(new PutObjectRequest(src_bkt, key, file));
-	// 	} catch (AmazonServiceException err) {
+		try {
+			svc.putObject(new PutObjectRequest(src_bkt, key, file));
+		} catch (AmazonServiceException err) {
 			
-	// 	}
+		}
 
-	// 	CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-	// 			5 * 1024 * 1024);
-	// 	svc.completeMultipartUpload(resp);
+		CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				5 * 1024 * 1024);
+		svc.completeMultipartUpload(resp);
 
-	// 	CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-	// 			5 * 1024 * 1024 + 100 * 1024);
-	// 	svc.completeMultipartUpload(resp2);
+		CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				5 * 1024 * 1024 + 100 * 1024);
+		svc.completeMultipartUpload(resp2);
 
-	// 	CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-	// 			5 * 1024 * 1024 + 600 * 1024);
-	// 	svc.completeMultipartUpload(resp3);
+		CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				5 * 1024 * 1024 + 600 * 1024);
+		svc.completeMultipartUpload(resp3);
 
-	// 	CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-	// 			10 * 1024 * 1024 + 100 * 1024);
-	// 	svc.completeMultipartUpload(resp4);
+		CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				10 * 1024 * 1024 + 100 * 1024);
+		svc.completeMultipartUpload(resp4);
 
-	// 	CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-	// 			10 * 1024 * 1024 + 600 * 1024);
-	// 	svc.completeMultipartUpload(resp5);
+		CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				10 * 1024 * 1024 + 600 * 1024);
+		svc.completeMultipartUpload(resp5);
 
-	// 	CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
-	// 			10 * 1024 * 1024);
-	// 	svc.completeMultipartUpload(resp6);
+		CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				10 * 1024 * 1024);
+		svc.completeMultipartUpload(resp6);
 
-	// }
+	}
 
 	@Test(description = "Upload of a file using HLAPI, succeeds!")
 	public void testUploadFileHLAPIBigFileAWS4() {
@@ -819,6 +823,8 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String dir = "./data";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		Transfer upl = utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
 
@@ -833,6 +839,8 @@ public class AWS4Test {
 		String bucket_name = utils.getBucketName(prefix);
 
 		String dir = "./data";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		try {
 			utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
@@ -900,7 +908,8 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(src_bkt));
 		svc.createBucket(new CreateBucketRequest(dst_bkt));
 
-		String filePath = "./data/sample.txt";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 
@@ -918,7 +927,8 @@ public class AWS4Test {
 
 		svc.createBucket(new CreateBucketRequest(src_bkt));
 
-		String filePath = "./data/sample.txt";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 
@@ -971,7 +981,8 @@ public class AWS4Test {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 		String key = "key1";
 
-		String filePath = "./data/sample.txt";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 

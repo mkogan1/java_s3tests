@@ -417,21 +417,12 @@ public class S3 {
 
 	public Upload UploadFileHLAPI(AmazonS3 svc, String bucket, String key, String filePath) {
 		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc)
-				.withMinimumUploadPartSize(10 * 1024 * 1024l).build();
+				.build();
 		Upload upload = tm.upload(bucket, key, new File(filePath));
 		try {
 			waitForCompletion(upload);
 		} catch (AmazonServiceException e) {
 
-		}
-		int waitForDone = 0;
-		if (!upload.isDone() && waitForDone < 10){
-			try {
-				Thread.sleep(10 * 1000l);
-			} catch (InterruptedException e) {
-
-			}
-			waitForDone++;
 		}
 		return upload;
 	}
@@ -488,5 +479,4 @@ public class S3 {
 
 		}
 	}
-
 }

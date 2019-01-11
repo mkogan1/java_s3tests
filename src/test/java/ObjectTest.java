@@ -13,6 +13,7 @@ import java.util.List;
 import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
@@ -63,6 +64,14 @@ public class ObjectTest {
 	boolean useV4Signature = false;
 	AmazonS3 svc = utils.getS3Client(useV4Signature);
 	String prefix = utils.getPrefix();
+
+	@BeforeClass
+	public void generateFiles(){
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
+		filePath = "./data/file.txt";
+		utils.createFile(filePath, 256 * 1024);	
+	}
 
 	@AfterClass
 	public void tearDownAfterClass() throws Exception {
@@ -1259,10 +1268,8 @@ public class ObjectTest {
 		Assert.assertEquals(list.isEmpty(), true);
 	}
 
-	@Test(description = "object list) w/ negative maxkeys, suceeds")
+	@Test(description = "object list w/ negative maxkeys, suceeds")
 	public void testObjectListMaxkeysNegative() {
-
-		// passes..wonder blandar
 
 		String[] keys = { "bar", "baz", "foo", "quxx" };
 
@@ -1270,8 +1277,8 @@ public class ObjectTest {
 		final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName()).withMaxKeys(-1);
 		ListObjectsV2Result result = svc.listObjectsV2(req);
 
-		Assert.assertEquals(result.getMaxKeys(), -1);
-		Assert.assertEquals(result.isTruncated(), true);
+		Assert.assertEquals(result.getMaxKeys(), 0);
+		Assert.assertEquals(result.isTruncated(), false);
 
 		Object[] k = new Object[] {};
 		ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(k));
@@ -1700,71 +1707,53 @@ public class ObjectTest {
 		}
 	}
 
-	// The MultipartCopy test with LL API are commented out due to differences
-	// observed
-	// in the HTTP response of the CopyPart request when running on master and mimic
-	// branches
-	// of Ceph
+	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
+	public void testMultipartCopyMultipleSizesLLAPI() {
 
-	// @Test(description = "multipart copy for small file using LLAPI, succeeds!")
-	// public void testMultipartCopyMultipleSizesLLAPI() {
+		String src_bkt = utils.getBucketName(prefix);
+		String dst_bkt = utils.getBucketName(prefix);
+		String key = "key1";
 
-	// String src_bkt = utils.getBucketName(prefix);
-	// String dst_bkt = utils.getBucketName(prefix);
-	// String src_key = "src-key-0";
-	// String dst_key = "dst-key-1";
+		svc.createBucket(new CreateBucketRequest(src_bkt));
+		svc.createBucket(new CreateBucketRequest(dst_bkt));
 
-	// svc.createBucket(new CreateBucketRequest(src_bkt));
-	// svc.createBucket(new CreateBucketRequest(dst_bkt));
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
+		File file = new File(filePath);
 
-	// String filePath = "./data/file.mpg";
-	// utils.createFile(filePath, 23 * 1024 * 1024);
-	// // Upload upl = utils.UploadFileHLAPI(svc, src_bkt, src_key, filePath);
-	// // Assert.assertEquals(upl.isDone(), true);
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(file.length());
 
-	// File file = new File(filePath);
-	// // Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
+		try {
+			svc.putObject(new PutObjectRequest(src_bkt, key, file));
+		} catch (AmazonServiceException err) {
 
-	// ObjectMetadata metadata = new ObjectMetadata();
-	// metadata.setContentLength(file.length());
+		}
 
-	// try {
-	// svc.putObject(new PutObjectRequest(src_bkt, src_key, file));
-	// } catch (AmazonServiceException err) {
+		CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				5 * 1024 * 1024);
+		svc.completeMultipartUpload(resp);
 
-	// }
+		CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				5 * 1024 * 1024 + 100 * 1024);
+		svc.completeMultipartUpload(resp2);
 
-	// CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt,
-	// dst_key, src_bkt, src_key,
-	// 5 * 1024 * 1024);
-	// S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-	// svc.completeMultipartUpload(resp);
+		CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				5 * 1024 * 1024 + 600 * 1024);
+		svc.completeMultipartUpload(resp3);
 
-	// CompleteMultipartUploadRequest resp2 = utils.multipartCopyLLAPI(svc, dst_bkt,
-	// dst_key, src_bkt, src_key,
-	// 5 * 1024 * 1024 + 100 * 1024);
-	// svc.completeMultipartUpload(resp2);
+		CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				10 * 1024 * 1024 + 100 * 1024);
+		svc.completeMultipartUpload(resp4);
 
-	// CompleteMultipartUploadRequest resp3 = utils.multipartCopyLLAPI(svc, dst_bkt,
-	// dst_key, src_bkt, src_key,
-	// 5 * 1024 * 1024 + 600 * 1024);
-	// svc.completeMultipartUpload(resp3);
+		CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				10 * 1024 * 1024 + 600 * 1024);
+		svc.completeMultipartUpload(resp5);
 
-	// CompleteMultipartUploadRequest resp4 = utils.multipartCopyLLAPI(svc, dst_bkt,
-	// dst_key, src_bkt, src_key,
-	// 10 * 1024 * 1024 + 100 * 1024);
-	// svc.completeMultipartUpload(resp4);
-
-	// CompleteMultipartUploadRequest resp5 = utils.multipartCopyLLAPI(svc, dst_bkt,
-	// dst_key, src_bkt, src_key,
-	// 10 * 1024 * 1024 + 600 * 1024);
-	// svc.completeMultipartUpload(resp5);
-
-	// CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt,
-	// dst_key, src_bkt, src_key,
-	// 10 * 1024 * 1024);
-	// svc.completeMultipartUpload(resp6);
-	// }
+		CompleteMultipartUploadRequest resp6 = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
+				10 * 1024 * 1024);
+		svc.completeMultipartUpload(resp6);
+	}
 
 	@Test(description = "Upload of a  file using HLAPI, succeeds!")
 	public void testUploadFileHLAPIBigFile() {
@@ -1806,6 +1795,8 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String dir = "./data";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		Transfer upl = utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
 
@@ -1819,6 +1810,8 @@ public class ObjectTest {
 		String bucket_name = utils.getBucketName(prefix);
 
 		String dir = "./data";
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 
 		try {
 			utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
@@ -1836,17 +1829,18 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 
 		String filePath = "./data/file.mpg";
-		utils.createFile(filePath, 23 * 1024 * 1024);
+		utils.createFile(filePath, 53 * 1024 * 1024);
 		String key = "key1";
 
-		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc)
+				.withMultipartUploadThreshold(256 * 1024l).withMinimumUploadPartSize(256 * 1024l).build();
 		Upload myUpload = tm.upload(bucket_name, key, new File(filePath));
 
 		// pause upload
-		long MB = 10;
 		TransferProgress progress = myUpload.getProgress();
-		while (progress.getBytesTransferred() < MB)
-			Thread.sleep(2000);
+		long MB = 5 * 1024 * 1024l;
+		while (progress.getBytesTransferred() < MB) 
+			Thread.sleep(200);
 
 		if (progress.getBytesTransferred() < progress.getTotalBytesToTransfer()) {
 			boolean forceCancel = true;
@@ -1880,8 +1874,8 @@ public class ObjectTest {
 		svc.createBucket(new CreateBucketRequest(src_bkt));
 		svc.createBucket(new CreateBucketRequest(dst_bkt));
 
-		String filePath = "./data/sample.txt";
-		utils.createFile(filePath, 256 * 1024);
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 
@@ -1899,8 +1893,8 @@ public class ObjectTest {
 
 		svc.createBucket(new CreateBucketRequest(src_bkt));
 
-		String filePath = "./data/sample.txt";
-		utils.createFile(filePath, 256 * 1024);
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
 		Upload upl = utils.UploadFileHLAPI(svc, src_bkt, key, filePath);
 		Assert.assertEquals(upl.isDone(), true);
 

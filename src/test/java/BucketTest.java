@@ -1,6 +1,7 @@
 import org.testng.AssertJUnit;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -15,6 +16,14 @@ public class BucketTest {
 	private static S3 utils = S3.getInstance();;
 	AmazonS3 svc = utils.getS3Client(false);
 	String prefix = utils.getPrefix();
+
+	@BeforeClass
+	public void generateFiles(){
+		String filePath = "./data/file.mpg";
+		utils.createFile(filePath, 23 * 1024 * 1024);
+		filePath = "./data/file.txt";
+		utils.createFile(filePath, 256 * 1024);	
+	}
 
 	@AfterClass
 	public void tearDownAfterClass() throws Exception {
@@ -51,14 +60,11 @@ public class BucketTest {
 	public void testBucketDeleteNotExist() {
 
 		String bucket_name = utils.getBucketName(prefix);
-		AssertJUnit.assertEquals(svc.doesBucketExistV2(bucket_name), false);
 		try {
-
 			svc.deleteBucket(bucket_name);
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
-
 	}
 
 	@Test(description = "deleting non empty bucket returns BucketNotEmpty")
@@ -81,11 +87,14 @@ public class BucketTest {
 
 		String bucket_name = utils.getBucketName(prefix);
 		svc.createBucket(new CreateBucketRequest(bucket_name));
-		AssertJUnit.assertEquals(svc.doesBucketExistV2(bucket_name), true);
+		
+		// doesBucketExistV2 started returning true every time (23.09.2018)
+		// the V2 uses a GET method while the depricated doesBucketExist(Sring)
+		// uses a HEAD method to dermine the existance of the buckets
+		AssertJUnit.assertEquals(svc.doesBucketExist(bucket_name), true);
 
 		svc.deleteBucket(bucket_name);
-		AssertJUnit.assertEquals(svc.doesBucketExistV2(bucket_name), false);
-
+		AssertJUnit.assertEquals(svc.doesBucketExist(bucket_name), false);
 	}
 
 	@Test(description = "distinct buckets return distinct objects")
