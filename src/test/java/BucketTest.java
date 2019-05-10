@@ -62,6 +62,7 @@ public class BucketTest {
 		String bucket_name = utils.getBucketName(prefix);
 		try {
 			svc.deleteBucket(bucket_name);
+                        AssertJUnit.fail("Expected 400 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -77,6 +78,7 @@ public class BucketTest {
 
 		try {
 			svc.deleteBucket(bucket_name);
+                        AssertJUnit.fail("Expected 400 BucketNotEmpty");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "BucketNotEmpty");
 		}
@@ -119,6 +121,7 @@ public class BucketTest {
 		try {
 
 			svc.getBucketAcl(bucket_name);
+                        AssertJUnit.fail("Expected 400 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -164,6 +167,7 @@ public class BucketTest {
 			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
 			bktRequest.putCustomRequestHeader("Content-Length", "\\x07");
 			svc.createBucket(bktRequest);
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -177,6 +181,7 @@ public class BucketTest {
 			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
 			bktRequest.putCustomRequestHeader("Content-Length", "");
 			svc.createBucket(bktRequest);
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
@@ -192,6 +197,7 @@ public class BucketTest {
 			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
 			bktRequest.putCustomRequestHeader("Content-Length", " ");
 			svc.createBucket(bktRequest);
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -206,6 +212,7 @@ public class BucketTest {
 			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
 			bktRequest.putCustomRequestHeader("Authorization", "\\x07");
 			svc.createBucket(bktRequest);
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -221,6 +228,7 @@ public class BucketTest {
 			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
 			bktRequest.putCustomRequestHeader("Authorization", "");
 			svc.createBucket(bktRequest);
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -236,6 +244,7 @@ public class BucketTest {
 			CreateBucketRequest bktRequest = new CreateBucketRequest(bucket_name);
 			bktRequest.putCustomRequestHeader("Authorization", " ");
 			svc.createBucket(bktRequest);
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}

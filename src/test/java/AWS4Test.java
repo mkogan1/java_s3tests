@@ -100,6 +100,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 RequestTimeTooSkewed");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "RequestTimeTooSkewed");
 		}
@@ -123,6 +124,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 RequestTimeTooSkewed");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "RequestTimeTooSkewed");
 		}
@@ -146,6 +148,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -188,6 +191,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 RequestTimeTooSkewed");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "RequestTimeTooSkewed");
 		}
@@ -231,6 +235,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 RequestTimeTooSkewed");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "RequestTimeTooSkewed");
 		}
@@ -274,6 +279,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 RequestTimeTooSkewed");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "RequestTimeTooSkewed");
 		}
@@ -317,6 +323,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -340,6 +347,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 RequestTimeTooSkewed");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "RequestTimeTooSkewed");
 		}
@@ -363,6 +371,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -406,6 +415,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -449,6 +459,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -472,6 +483,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -495,6 +507,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
@@ -518,6 +531,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
@@ -541,6 +555,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
@@ -564,6 +579,7 @@ public class AWS4Test {
 
 		try {
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+                        AssertJUnit.fail("Expected 400 InvalidDigest");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidDigest");
 		}
@@ -657,6 +673,7 @@ public class AWS4Test {
 
 		try {
 			svc.completeMultipartUpload(compRequest);
+                        AssertJUnit.fail("Expected 400 InvalidPart");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidPart");
 		}
@@ -671,6 +688,7 @@ public class AWS4Test {
 
 		try {
 			svc.abortMultipartUpload(new AbortMultipartUploadRequest(bucket_name, key, "1"));
+                        AssertJUnit.fail("Expected 400 NoSuchUpload");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchUpload");
 		}
@@ -726,6 +744,7 @@ public class AWS4Test {
 		try {
 			CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
 			svc.completeMultipartUpload(resp);
+                        AssertJUnit.fail("Expected 400 EntityTooSmall");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "EntityTooSmall");
 		}
@@ -752,6 +771,7 @@ public class AWS4Test {
 		try {
 			svc.putObject(new PutObjectRequest(src_bkt, key, file));
 		} catch (AmazonServiceException err) {
+                  // ALI NOTE: what's the point of this try statement
 			
 		}
 
@@ -808,6 +828,7 @@ public class AWS4Test {
 
 		try {
 			utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
+                        AssertJUnit.fail("Expected 400 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -844,6 +865,7 @@ public class AWS4Test {
 
 		try {
 			utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
+                        AssertJUnit.fail("Expected 400 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -934,6 +956,7 @@ public class AWS4Test {
 
 		try {
 			utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key);
+                        AssertJUnit.fail("Expected 400 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -951,6 +974,7 @@ public class AWS4Test {
 
 		try {
 			utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key);
+                        AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -969,6 +993,7 @@ public class AWS4Test {
 
 		try {
 			utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key);
+                        AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -1001,6 +1026,7 @@ public class AWS4Test {
 
 		try {
 			utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+                        AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -1019,6 +1045,7 @@ public class AWS4Test {
 
 		try {
 			utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+                        AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -1098,6 +1125,7 @@ public class AWS4Test {
 
 		try {
 			utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+                        AssertJUnit.fail("Expected 400 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -1114,6 +1142,7 @@ public class AWS4Test {
 
 		try {
 			utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+                        AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
