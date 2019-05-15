@@ -723,57 +723,44 @@ public class ObjectTest {
 	// and the GET reguest requires a valid SSECustomerKey
 	@Test(description = "object write w/key w/no SSE succeeds on https, fails on http")
 	public void testEncryptionKeyNoSSEC() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setContentType("text/plain");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+                                "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+                objectMetadata.setSSECustomerKeyMd5("DWygnHRtgiJ77HCm+1rvHw==");
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setContentType("text/plain");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
-					"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			objectMetadata.setSSECustomerKeyMd5("DWygnHRtgiJ77HCm+1rvHw==");
-			objectMetadata.setSSECustomerAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 
 			svc.putObject(putRequest);
-
-			SSECustomerKey skey = new SSECustomerKey("pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			GetObjectRequest getRequest = new GetObjectRequest(bucket_name, key);
-			getRequest.withSSECustomerKey(skey);
-
-			InputStream inputStream = svc.getObject(getRequest).getObjectContent();
-			String rdata = null;
-			try {
-				rdata = IOUtils.toString(inputStream);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			Assert.assertEquals(rdata, data);
-		} catch (IllegalArgumentException err) {
-			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getMessage(),
-					"HTTPS must be used when sending customer encryption keys (SSE-C) to S3, in order to protect your encryption keys.");
+			AssertJUnit.fail("Expected 400 Failure");
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorMessage(),
+					"Requests specifying Server Side Encryption with Customer provided keys must provide a valid encryption algorithm.");
 		}
 	}
 
 	@Test(description = "object write w/SSE and no key, fails")
 	public void testEncryptionKeySSECNoKey() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 
 			svc.putObject(putRequest);
@@ -786,28 +773,22 @@ public class ObjectTest {
 
 	@Test(description = "object write w/SSE and no MD5, fails")
 	public void testEncryptionKeySSECNoMd5() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+                                "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+                PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
-					"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
-
 			svc.putObject(putRequest);
-
-			try {
-				svc.getObjectAsString(bucket_name, key);
-			} catch (AmazonServiceException err) {
-				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
-			}
 			AssertJUnit.fail("Expected A Failure because of No MD5");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorMessage(),
@@ -817,29 +798,25 @@ public class ObjectTest {
 
 	@Test(description = "object write w/SSE and Invalid MD5, fails")
 	public void testEncryptionKeySSECInvalidMd5() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+                                "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "AAAAAAAAAAAAAAAAAAAAAA==");
+                PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
-					"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "AAAAAAAAAAAAAAAAAAAAAA==");
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
-
-			try {
-				svc.getObjectAsString(bucket_name, key);
-			} catch (AmazonServiceException err) {
-				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
-			}
 			AssertJUnit.fail("Expected A Failure because of Invalid MD5");
+
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorMessage(),
 					"The calculated MD5 hash of the key did not match the hash that was provided.");
@@ -848,55 +825,43 @@ public class ObjectTest {
 
 	@Test(description = "object write w/KMS, suceeds with https")
 	public void testSSEKMSPresent() {
-		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-			String keyId = "testkey-1";
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+                String keyId = "testkey-1";
 
-			svc.createBucket(bucket_name);
+                svc.createBucket(bucket_name);
 
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
-			objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
-			svc.putObject(putRequest);
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+                objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+                svc.putObject(putRequest);
 
-			String rdata = svc.getObjectAsString(bucket_name, key);
-			Assert.assertEquals(rdata, data);
-		} catch (AmazonServiceException err) {
-			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
+                String rdata = svc.getObjectAsString(bucket_name, key);
+                Assert.assertEquals(rdata, data);
 	}
 
 	@Test(description = "object write w/KMS and no kmskeyid, fails")
 	public void testSSEKMSNoKey() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+                        PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
+			AssertJUnit.fail("Expected 400 InvalidAccessKeyId");
 
-			try {
-				svc.getObjectAsString(bucket_name, key);
-                                // ALI NOTE: What;s the point of this additional try statement. 
-                                // Should there just be an assert after putObject saying we expected it to fail? 
-                                // Take a look at the python test for this
-			        AssertJUnit.fail("Expected key1 to be empty");
-			} catch (AmazonServiceException err) {
-				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
-			}
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidAccessKeyId");
@@ -905,19 +870,19 @@ public class ObjectTest {
 
 	@Test(description = "object write w/no KMS and with kmskeyid, fails")
 	public void testSSEKMSNotDeclared() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+                String keyId = "testkey-1";
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-			String keyId = "testkey-1";
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+                        PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
 			AssertJUnit.fail("Expected Failure because of no x-amz-server-side-encryption header");
 		} catch (AmazonServiceException err) {
