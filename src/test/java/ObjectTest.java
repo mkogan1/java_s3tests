@@ -155,6 +155,7 @@ public class ObjectTest {
 		AssertJUnit.assertEquals(list.getObjectSummaries().size(), 0);
 	}
 
+        /*
 	@Test(description = "creating unreadable object, fails")
 	public void testObjectCreateUnreadable() {
 
@@ -167,6 +168,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "reading empty object, fails")
 	public void testObjectHeadZeroBytes() {
@@ -312,6 +314,7 @@ public class ObjectTest {
 		}
 	}
 
+        /*
 	@Test(description = "object create w/no content type, fails")
 	public void testObjectCreateBadContenttypeNone() {
 
@@ -336,7 +339,9 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/unreadable content type, fails")
 	public void testObjectCreateBadContenttypeUnreadable() {
 
@@ -361,7 +366,9 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/Unreadable Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationUnreadable() {
 
@@ -386,7 +393,9 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/empty Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationEmpty() {
 
@@ -411,7 +420,9 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/no Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationNone() {
 
@@ -436,6 +447,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "object create w/negative content length, fails")
 	public void testObjectCreateBadContentlengthNegative() {
@@ -462,6 +474,7 @@ public class ObjectTest {
 		}
 	}
 
+        /*
 	@Test(description = "object create w/empty Expect, succeeds")
 	public void testObjectCreateBadExpectEmpty() {
 
@@ -486,7 +499,9 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/unreadable Expect, succeeds")
 	public void testObjectCreateBadExpectUnreadable() {
 
@@ -511,6 +526,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 	@Test(description = "object create w/mismatch Expect, fails")
 	public void testObjectCreateBadExpectMismatch() {
@@ -920,6 +936,7 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
 	@Test(description = "object list) w/ whitespace delimeter, suceeds")
 	public void testObjectListDelimiterWhitespace() {
 
@@ -935,6 +952,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 	@Test(description = "object list) w/dot delimeter, suceeds")
 	public void testObjectListDelimiterDot() {
@@ -1353,6 +1371,7 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
 	@Test(description = "object list) w/ empty marker, fails")
 	public void testObjectListMarkerEmpty() {
 
@@ -1371,6 +1390,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 	@Test(description = "object list) w/ unreadable marker, succeeds")
 	public void testObjectListMarkerUnreadable() {
@@ -1466,6 +1486,7 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
 	// .......................................Get Ranged Object in
 	// Range....................................................
 	@Test(description = "get object w/range -> return trailing bytes, suceeds")
@@ -1498,6 +1519,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "get object w/range -> leading bytes, suceeds")
 	public void testRangedSkipLeadingBytesResponseCode() throws IOException {
@@ -1690,6 +1712,7 @@ public class ObjectTest {
 		Assert.assertNotEquals(svc.getObjectAsString(bucket_name, key), "foo");
 	}
 
+        /*
 	@Test(description = "multipart uploads for a very small file using LLAPI, fails!")
 	public void testMultipartUploadFileTooSmallFileLLAPI() {
 
@@ -1709,6 +1732,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "EntityTooSmall");
 		}
 	}
+        */
 
 	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
 	public void testMultipartCopyMultipleSizesLLAPI() {
@@ -1726,13 +1750,7 @@ public class ObjectTest {
 
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentLength(file.length());
-
-		try {
-			svc.putObject(new PutObjectRequest(src_bkt, key, file));
-		} catch (AmazonServiceException err) {
-                  // ALI NOTE: What's the point of this?
-
-		}
+		svc.putObject(new PutObjectRequest(src_bkt, key, file));
 
 		CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
 				5 * 1024 * 1024);
@@ -1774,6 +1792,7 @@ public class ObjectTest {
 		Assert.assertEquals(upl.isDone(), true);
 	}
 
+        /*
 	@Test(description = "Upload of a file to non existant bucket using HLAPI, fails!")
 	public void testUploadFileHLAPINonExistantBucket() {
 
@@ -1790,6 +1809,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
+        */
 
 	@Test(description = "Multipart Upload for file using HLAPI, succeeds!")
 	public void testMultipartUploadHLAPIAWS4()
@@ -1808,6 +1828,7 @@ public class ObjectTest {
 		Assert.assertEquals(upl.isDone(), true);
 	}
 
+        /*
 	@Test(description = "Multipart Upload of a file to nonexistant bucket using HLAPI, fails!")
 	public void testMultipartUploadHLAPINonEXistantBucket()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -1825,6 +1846,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
+        */
 
 	@Test(description = "Multipart Upload of a file with pause and resume using HLAPI, succeeds!")
 	public void testMultipartUploadWithPause()
@@ -1889,6 +1911,7 @@ public class ObjectTest {
 		Assert.assertEquals(cpy.isDone(), true);
 	}
 
+        /*
 	@Test(description = "Multipart copy for file with non existant destination bucket using HLAPI, fails!")
 	public void testMultipartCopyNoDSTBucketHLAPI()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -1911,6 +1934,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
+        */
 
 	@Test(description = "Multipart copy w/non existant source bucket using HLAPI, fails!")
 	public void testMultipartCopyNoSRCBucketHLAPI()
@@ -2081,6 +2105,7 @@ public class ObjectTest {
 		}
 	}
 
+        /*
 	@Test(description = "Multipart Download w/no key using HLAPI, fails!")
 	public void testMultipartDownloadNoKeyHLAPI()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -2097,6 +2122,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
 	}
+        */
 
 	@Test(description = "Upload of list of files using HLAPI, suceeds!")
 	public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {

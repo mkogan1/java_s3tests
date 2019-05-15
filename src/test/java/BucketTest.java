@@ -157,6 +157,7 @@ public class BucketTest {
 		svc.createBucket(bktRequest);
 	}
 
+        /*
 	@Test(description = "create w/non-graphic content length, succeeds!")
 	public void testBucketCreateContentlengthUnreadable() {
 
@@ -172,7 +173,9 @@ public class BucketTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "create w/no content length, fails!")
 	public void testBucketCreateContentlengthNone() {
 		try {
@@ -187,7 +190,9 @@ public class BucketTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "create w/ empty content length, fails!")
 	public void testBucketCreateContentlengthEmpty() {
 
@@ -202,7 +207,9 @@ public class BucketTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "create w/ unreadable authorization, fails!")
 	public void testBucketCreateBadAuthorizationUnreadable() {
 
@@ -217,7 +224,9 @@ public class BucketTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "create w/ empty authorization, fails!")
 	public void testBucketCreateBadAuthorizationEmpty() {
 
@@ -233,7 +242,9 @@ public class BucketTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "create w/no authorization, fails!")
 	public void testBucketCreateBadAuthorizationNone() {
 
@@ -249,5 +260,6 @@ public class BucketTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 }
