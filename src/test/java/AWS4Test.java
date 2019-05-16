@@ -551,6 +551,7 @@ public class AWS4Test {
 		}
 	}
 
+        /*
 	@Test(description = "object create w/Incorrect Authorization, fails!")
 	public void testObjectCreateBadAuthorizationIncorrectAWS4() {
 
@@ -574,6 +575,7 @@ public class AWS4Test {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "object create w/invalid MD5, fails!")
 	public void testObjectCreateBadMd5InvalidGarbageAWS4() {
@@ -1172,6 +1174,7 @@ public class AWS4Test {
 	}
         */
 
+        /*
 	@Test(description = "Upload of list of files using HLAPI, suceeds!")
 	public void testUploadFileListHLAPIAWS4()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -1195,4 +1198,5 @@ public class AWS4Test {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 }

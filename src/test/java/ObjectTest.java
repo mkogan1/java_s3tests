@@ -284,6 +284,7 @@ public class ObjectTest {
 		}
 	}
 
+        /*
 	@Test(description = "object create w/empty content type, fails")
 	public void testObjectCreateBadContenttypeEmpty() {
 		String bucket_name = utils.getBucketName(prefix);
@@ -313,6 +314,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
         /*
 	@Test(description = "object create w/no content type, fails")
@@ -979,6 +981,8 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
+
 	@Test(description = "object list) w/unreadable delimeter, succeeds")
 	public void testObjectListDelimiterUnreadable() {
 
@@ -994,6 +998,7 @@ public class ObjectTest {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidArgument");
 		}
 	}
+        */
 
 	@Test(description = "object list) w/ non existant delimeter, suceeds")
 	public void testObjectListDelimiterNotExist() {
