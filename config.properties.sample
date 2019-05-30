@@ -6,8 +6,8 @@ s3main :
   region : mexico 
   endpoint : localhost:8000/
   port : 8000
-  display_name : Mr. Tester
-  email : tester@test.com
+  display_name : M. Tester
+  email : tester@ceph.com
   is_secure : false
   SSE : AES256
 

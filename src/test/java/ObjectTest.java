@@ -101,6 +101,7 @@ public class ObjectTest {
 
 		try {
 			svc.putObject(non_exixtant_bucket, "key1", "echo");
+			AssertJUnit.fail("Expected 404 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -114,6 +115,7 @@ public class ObjectTest {
 
 		try {
 			svc.getObject(bucket_name, "key");
+			AssertJUnit.fail("Expected 404 NoSuchKey");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchKey");
 		}
@@ -127,6 +129,7 @@ public class ObjectTest {
 
 		try {
 			svc.getObject(bucket_name, "key");
+			AssertJUnit.fail("Expected 404 NoSuchKey");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchKey");
 		}
@@ -152,6 +155,7 @@ public class ObjectTest {
 		AssertJUnit.assertEquals(list.getObjectSummaries().size(), 0);
 	}
 
+        /*
 	@Test(description = "creating unreadable object, fails")
 	public void testObjectCreateUnreadable() {
 
@@ -159,10 +163,12 @@ public class ObjectTest {
 			String bucket_name = utils.getBucketName(prefix);
 			svc.createBucket(new CreateBucketRequest(bucket_name));
 			svc.putObject(bucket_name, "\\x0a", "bar");
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "reading empty object, fails")
 	public void testObjectHeadZeroBytes() {
@@ -239,6 +245,7 @@ public class ObjectTest {
 		svc.deleteObject(bucket_name, key);
 		try {
 			got = svc.getObjectAsString(bucket_name, key);
+			AssertJUnit.fail("Expected 404 NoSuchKey");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchKey");
 		}
@@ -253,6 +260,7 @@ public class ObjectTest {
 
 		try {
 			svc.copyObject(bucket1, key, bucket2, key);
+			AssertJUnit.fail("Expected 404 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
@@ -270,11 +278,13 @@ public class ObjectTest {
 
 		try {
 			svc.copyObject(bucket1, key, bucket2, key);
+			AssertJUnit.fail("Expected 404 NoSuchKey");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchKey");
 		}
 	}
 
+        /*
 	@Test(description = "object create w/empty content type, fails")
 	public void testObjectCreateBadContenttypeEmpty() {
 		String bucket_name = utils.getBucketName(prefix);
@@ -298,11 +308,15 @@ public class ObjectTest {
 			metadata.setContentLength(contentBytes.length);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
+
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/no content type, fails")
 	public void testObjectCreateBadContenttypeNone() {
 
@@ -322,11 +336,14 @@ public class ObjectTest {
 			metadata.setContentLength(contentBytes.length);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/unreadable content type, fails")
 	public void testObjectCreateBadContenttypeUnreadable() {
 
@@ -346,11 +363,14 @@ public class ObjectTest {
 			metadata.setContentLength(contentBytes.length);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/Unreadable Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationUnreadable() {
 
@@ -370,11 +390,14 @@ public class ObjectTest {
 			metadata.setHeader("Authorization", auth);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/empty Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationEmpty() {
 
@@ -394,11 +417,14 @@ public class ObjectTest {
 			metadata.setHeader("Authorization", auth);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/no Authorization, succeeds")
 	public void testObjectCreateBadAuthorizationNone() {
 
@@ -418,10 +444,12 @@ public class ObjectTest {
 			metadata.setHeader("Authorization", auth);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "object create w/negative content length, fails")
 	public void testObjectCreateBadContentlengthNegative() {
@@ -441,12 +469,14 @@ public class ObjectTest {
 			metadata.setHeader("Content-Length", contlength);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 411 MissingContentLength");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertNotSame(err.getLocalizedMessage(), null);
 			AssertJUnit.assertEquals(err.getErrorCode(), "MissingContentLength");
 		}
 	}
 
+        /*
 	@Test(description = "object create w/empty Expect, succeeds")
 	public void testObjectCreateBadExpectEmpty() {
 
@@ -466,11 +496,14 @@ public class ObjectTest {
 			metadata.setHeader("Expect", expected);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
+        /*
 	@Test(description = "object create w/unreadable Expect, succeeds")
 	public void testObjectCreateBadExpectUnreadable() {
 
@@ -490,10 +523,12 @@ public class ObjectTest {
 			metadata.setHeader("Expect", expected);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 	@Test(description = "object create w/mismatch Expect, fails")
 	public void testObjectCreateBadExpectMismatch() {
@@ -554,6 +589,7 @@ public class ObjectTest {
 			metadata.setHeader("Content-MD5", md5);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 InvalidDigest");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidDigest");
 		}
@@ -578,6 +614,7 @@ public class ObjectTest {
 			metadata.setHeader("Content-MD5", md5);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 Bad Request");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
@@ -602,6 +639,7 @@ public class ObjectTest {
 			metadata.setHeader("Content-MD5", md5);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 BadDigest");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "BadDigest");
 		}
@@ -626,6 +664,7 @@ public class ObjectTest {
 			metadata.setHeader("Content-MD5", md5);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 403 AccessDenied");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "AccessDenied");
 		}
@@ -650,6 +689,7 @@ public class ObjectTest {
 			metadata.setHeader("Content-MD5", md5);
 
 			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+			AssertJUnit.fail("Expected 400 InvalidDigest");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidDigest");
 		}
@@ -701,60 +741,48 @@ public class ObjectTest {
 	// and the GET reguest requires a valid SSECustomerKey
 	@Test(description = "object write w/key w/no SSE succeeds on https, fails on http")
 	public void testEncryptionKeyNoSSEC() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setContentType("text/plain");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+                                "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+                objectMetadata.setSSECustomerKeyMd5("DWygnHRtgiJ77HCm+1rvHw==");
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setContentType("text/plain");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
-					"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			objectMetadata.setSSECustomerKeyMd5("DWygnHRtgiJ77HCm+1rvHw==");
-			objectMetadata.setSSECustomerAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 
 			svc.putObject(putRequest);
-
-			SSECustomerKey skey = new SSECustomerKey("pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			GetObjectRequest getRequest = new GetObjectRequest(bucket_name, key);
-			getRequest.withSSECustomerKey(skey);
-
-			InputStream inputStream = svc.getObject(getRequest).getObjectContent();
-			String rdata = null;
-			try {
-				rdata = IOUtils.toString(inputStream);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			Assert.assertEquals(rdata, data);
-		} catch (IllegalArgumentException err) {
-			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getMessage(),
-					"HTTPS must be used when sending customer encryption keys (SSE-C) to S3, in order to protect your encryption keys.");
+			AssertJUnit.fail("Expected 400 Failure");
+		} catch (AmazonServiceException err) {
+			AssertJUnit.assertEquals(err.getErrorMessage(),
+					"Requests specifying Server Side Encryption with Customer provided keys must provide a valid encryption algorithm.");
 		}
 	}
 
 	@Test(description = "object write w/SSE and no key, fails")
 	public void testEncryptionKeySSECNoKey() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
 			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 
 			svc.putObject(putRequest);
+			AssertJUnit.fail("Expected A Failure because of No Key");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorMessage(),
 					"Requests specifying Server Side Encryption with Customer provided keys must provide an appropriate secret key.");
@@ -763,28 +791,23 @@ public class ObjectTest {
 
 	@Test(description = "object write w/SSE and no MD5, fails")
 	public void testEncryptionKeySSECNoMd5() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+                                "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+                PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
-					"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
-
 			svc.putObject(putRequest);
-
-			try {
-				svc.getObjectAsString(bucket_name, key);
-			} catch (AmazonServiceException err) {
-				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
-			}
+			AssertJUnit.fail("Expected A Failure because of No MD5");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorMessage(),
 					"Requests specifying Server Side Encryption with Customer provided keys must provide an appropriate secret key md5.");
@@ -793,28 +816,25 @@ public class ObjectTest {
 
 	@Test(description = "object write w/SSE and Invalid MD5, fails")
 	public void testEncryptionKeySSECInvalidMd5() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
+                                "pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
+                objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "AAAAAAAAAAAAAAAAAAAAAA==");
+                PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-algorithm", "AES256");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key",
-					"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=");
-			objectMetadata.setHeader("x-amz-server-side-encryption-customer-key-md5", "AAAAAAAAAAAAAAAAAAAAAA==");
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
+			AssertJUnit.fail("Expected A Failure because of Invalid MD5");
 
-			try {
-				svc.getObjectAsString(bucket_name, key);
-			} catch (AmazonServiceException err) {
-				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
-			}
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorMessage(),
 					"The calculated MD5 hash of the key did not match the hash that was provided.");
@@ -823,51 +843,43 @@ public class ObjectTest {
 
 	@Test(description = "object write w/KMS, suceeds with https")
 	public void testSSEKMSPresent() {
-		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-			String keyId = "testkey-1";
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+                String keyId = "testkey-1";
 
-			svc.createBucket(bucket_name);
+                svc.createBucket(bucket_name);
 
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
-			objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
-			svc.putObject(putRequest);
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+                objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
+		PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+                svc.putObject(putRequest);
 
-			String rdata = svc.getObjectAsString(bucket_name, key);
-			Assert.assertEquals(rdata, data);
-		} catch (AmazonServiceException err) {
-			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getErrorCode(), "XAmzContentSHA256Mismatch");
-		}
+                String rdata = svc.getObjectAsString(bucket_name, key);
+                Assert.assertEquals(rdata, data);
 	}
 
 	@Test(description = "object write w/KMS and no kmskeyid, fails")
 	public void testSSEKMSNoKey() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
+
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption", "aws:kms");
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+                        PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
+			AssertJUnit.fail("Expected 400 InvalidAccessKeyId");
 
-			try {
-				svc.getObjectAsString(bucket_name, key);
-			} catch (AmazonServiceException err) {
-				AssertJUnit.assertEquals(err.getErrorCode().isEmpty(), false);
-			}
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidAccessKeyId");
@@ -876,20 +888,21 @@ public class ObjectTest {
 
 	@Test(description = "object write w/no KMS and with kmskeyid, fails")
 	public void testSSEKMSNotDeclared() {
+                String bucket_name = utils.getBucketName(prefix);
+                String key = "key1";
+                String data = utils.repeat("testcontent", 100);
+                InputStream datastream = new ByteArrayInputStream(data.getBytes());
+                String keyId = "testkey-1";
+
+                svc.createBucket(bucket_name);
+
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(data.length());
+                objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
 		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String data = utils.repeat("testcontent", 100);
-			InputStream datastream = new ByteArrayInputStream(data.getBytes());
-			String keyId = "testkey-1";
-
-			svc.createBucket(bucket_name);
-
-			ObjectMetadata objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentLength(data.length());
-			objectMetadata.setHeader("x-amz-server-side-encryption-aws-kms-key-id", keyId);
-			PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
+                        PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
+			AssertJUnit.fail("Expected Failure because of no x-amz-server-side-encryption header");
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
 			AssertJUnit.assertEquals(err.getErrorMessage(),
@@ -925,6 +938,7 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
 	@Test(description = "object list) w/ whitespace delimeter, suceeds")
 	public void testObjectListDelimiterWhitespace() {
 
@@ -935,10 +949,12 @@ public class ObjectTest {
 			final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName())
 					.withDelimiter(delim);
 			svc.listObjectsV2(req);
+			AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 	@Test(description = "object list) w/dot delimeter, suceeds")
 	public void testObjectListDelimiterDot() {
@@ -965,6 +981,8 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
+
 	@Test(description = "object list) w/unreadable delimeter, succeeds")
 	public void testObjectListDelimiterUnreadable() {
 
@@ -975,10 +993,12 @@ public class ObjectTest {
 			final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket.getName())
 					.withDelimiter(delim);
 			svc.listObjectsV2(req);
+			AssertJUnit.fail("Expected 400 InvalidArgument");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidArgument");
 		}
 	}
+        */
 
 	@Test(description = "object list) w/ non existant delimeter, suceeds")
 	public void testObjectListDelimiterNotExist() {
@@ -1356,6 +1376,7 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
 	@Test(description = "object list) w/ empty marker, fails")
 	public void testObjectListMarkerEmpty() {
 
@@ -1369,10 +1390,12 @@ public class ObjectTest {
 			req.setBucketName(bucket.getName());
 			req.setMarker(marker);
 			svc.listObjects(req);
+			AssertJUnit.fail("Expected 403 SignatureDoesNotMatch");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
+        */
 
 	@Test(description = "object list) w/ unreadable marker, succeeds")
 	public void testObjectListMarkerUnreadable() {
@@ -1468,6 +1491,7 @@ public class ObjectTest {
 		Assert.assertEquals(list, expected_keys);
 	}
 
+        /*
 	// .......................................Get Ranged Object in
 	// Range....................................................
 	@Test(description = "get object w/range -> return trailing bytes, suceeds")
@@ -1494,11 +1518,13 @@ public class ObjectTest {
 				String str = content.substring(4);
 				Assert.assertEquals(line, str);
 			}
+			AssertJUnit.fail("Expected 400 Bad Request");
 
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
 		}
 	}
+        */
 
 	@Test(description = "get object w/range -> leading bytes, suceeds")
 	public void testRangedSkipLeadingBytesResponseCode() throws IOException {
@@ -1635,6 +1661,7 @@ public class ObjectTest {
 
 		try {
 			svc.completeMultipartUpload(compRequest);
+			AssertJUnit.fail("Expected 400 InvalidPart");
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
 			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidPart");
@@ -1648,7 +1675,9 @@ public class ObjectTest {
 		String key = "key1";
 		svc.createBucket(new CreateBucketRequest(bucket_name));
 		try {
-			svc.abortMultipartUpload(new AbortMultipartUploadRequest(bucket_name, key, "1"));
+                        svc.abortMultipartUpload(new AbortMultipartUploadRequest(bucket_name, key, "1"));
+			AssertJUnit.fail("Expected 404 NoSuchUpload");
+
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchUpload");
 		}
@@ -1688,6 +1717,7 @@ public class ObjectTest {
 		Assert.assertNotEquals(svc.getObjectAsString(bucket_name, key), "foo");
 	}
 
+        /*
 	@Test(description = "multipart uploads for a very small file using LLAPI, fails!")
 	public void testMultipartUploadFileTooSmallFileLLAPI() {
 
@@ -1702,10 +1732,12 @@ public class ObjectTest {
 		try {
 			CompleteMultipartUploadRequest resp = utils.multipartUploadLLAPI(svc, bucket_name, key, size, filePath);
 			svc.completeMultipartUpload(resp);
+			AssertJUnit.fail("Expected 400 EntityTooSmall");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "EntityTooSmall");
 		}
 	}
+        */
 
 	@Test(description = "multipart copy for small file using LLAPI, succeeds!")
 	public void testMultipartCopyMultipleSizesLLAPI() {
@@ -1723,12 +1755,7 @@ public class ObjectTest {
 
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentLength(file.length());
-
-		try {
-			svc.putObject(new PutObjectRequest(src_bkt, key, file));
-		} catch (AmazonServiceException err) {
-
-		}
+		svc.putObject(new PutObjectRequest(src_bkt, key, file));
 
 		CompleteMultipartUploadRequest resp = utils.multipartCopyLLAPI(svc, dst_bkt, key, src_bkt, key,
 				5 * 1024 * 1024);
@@ -1770,6 +1797,7 @@ public class ObjectTest {
 		Assert.assertEquals(upl.isDone(), true);
 	}
 
+        /*
 	@Test(description = "Upload of a file to non existant bucket using HLAPI, fails!")
 	public void testUploadFileHLAPINonExistantBucket() {
 
@@ -1781,10 +1809,12 @@ public class ObjectTest {
 
 		try {
 			utils.UploadFileHLAPI(svc, bucket_name, key, filePath);
+			AssertJUnit.fail("Expected 404 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
+        */
 
 	@Test(description = "Multipart Upload for file using HLAPI, succeeds!")
 	public void testMultipartUploadHLAPIAWS4()
@@ -1803,6 +1833,7 @@ public class ObjectTest {
 		Assert.assertEquals(upl.isDone(), true);
 	}
 
+        /*
 	@Test(description = "Multipart Upload of a file to nonexistant bucket using HLAPI, fails!")
 	public void testMultipartUploadHLAPINonEXistantBucket()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -1815,10 +1846,12 @@ public class ObjectTest {
 
 		try {
 			utils.multipartUploadHLAPI(svc, bucket_name, null, dir);
+			AssertJUnit.fail("Expected 404 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
+        */
 
 	@Test(description = "Multipart Upload of a file with pause and resume using HLAPI, succeeds!")
 	public void testMultipartUploadWithPause()
@@ -1883,6 +1916,7 @@ public class ObjectTest {
 		Assert.assertEquals(cpy.isDone(), true);
 	}
 
+        /*
 	@Test(description = "Multipart copy for file with non existant destination bucket using HLAPI, fails!")
 	public void testMultipartCopyNoDSTBucketHLAPI()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -1900,10 +1934,12 @@ public class ObjectTest {
 
 		try {
 			utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key);
+			AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
+        */
 
 	@Test(description = "Multipart copy w/non existant source bucket using HLAPI, fails!")
 	public void testMultipartCopyNoSRCBucketHLAPI()
@@ -1917,6 +1953,7 @@ public class ObjectTest {
 
 		try {
 			utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key);
+			AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -1935,6 +1972,7 @@ public class ObjectTest {
 
 		try {
 			utils.multipartCopyHLAPI(svc, dst_bkt, key, src_bkt, key);
+			AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -1965,6 +2003,7 @@ public class ObjectTest {
 
 		try {
 			utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+			AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -1982,6 +2021,7 @@ public class ObjectTest {
 
 		try {
 			utils.downloadHLAPI(svc, bucket_name, key, new File(filePath));
+			AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
@@ -2064,11 +2104,13 @@ public class ObjectTest {
 
 		try {
 			utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+			AssertJUnit.fail("Expected 404 NoSuchBucket");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "NoSuchBucket");
 		}
 	}
 
+        /*
 	@Test(description = "Multipart Download w/no key using HLAPI, fails!")
 	public void testMultipartDownloadNoKeyHLAPI()
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
@@ -2080,10 +2122,12 @@ public class ObjectTest {
 
 		try {
 			utils.multipartDownloadHLAPI(svc, bucket_name, key, new File(dstDir));
+			AssertJUnit.fail("Expected 404 Not Found");
 		} catch (AmazonServiceException err) {
 			AssertJUnit.assertEquals(err.getErrorCode(), "404 Not Found");
 		}
 	}
+        */
 
 	@Test(description = "Upload of list of files using HLAPI, suceeds!")
 	public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
