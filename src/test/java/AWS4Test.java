@@ -525,7 +525,6 @@ public class AWS4Test {
 			AssertJUnit.assertEquals(err.getErrorCode(), "SignatureDoesNotMatch");
 		}
 	}
-        */
 
 	@Test(description = "object create w/Invalid Authorization, fails!")
 	public void testObjectCreateBadAuthorizationInvalidAWS4() {
@@ -551,7 +550,6 @@ public class AWS4Test {
 		}
 	}
 
-        /*
 	@Test(description = "object create w/Incorrect Authorization, fails!")
 	public void testObjectCreateBadAuthorizationIncorrectAWS4() {
 
