@@ -427,28 +427,6 @@ public class S3 {
 		return upload;
 	}
 
-	public MultipleFileUpload UploadFileListHLAPI(AmazonS3 svc, String bucket, String key)
-			throws AmazonServiceException, AmazonClientException, InterruptedException {
-
-		ArrayList<File> files = new ArrayList<File>();
-
-		String fname1 = "./data/file.mpg";
-		String fname2 = "./data/sample.txt";
-		createFile(fname1, 23 * 1024 * 1024);
-		createFile(fname2, 256 * 1024);
-		files.add(new File(fname1));
-		files.add(new File(fname2));
-
-		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
-		MultipleFileUpload xfer = tm.uploadFileList(bucket, key, new File("."), files);
-		try {
-			waitForCompletion(xfer);
-		} catch (AmazonServiceException e) {
-
-		}
-		return xfer;
-	}
-
 	public Transfer multipartUploadHLAPI(AmazonS3 svc, String bucket, String s3target, String directory)
 			throws AmazonServiceException, AmazonClientException, InterruptedException {
 

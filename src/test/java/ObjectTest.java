@@ -2129,28 +2129,35 @@ public class ObjectTest {
 	}
         */
 
-	@Test(description = "Upload of list of files using HLAPI, suceeds!")
-	public void testUploadFileListHLAPI() throws AmazonServiceException, AmazonClientException, InterruptedException {
+	@Test(description = "Upload of list of files suceeds!")
+	public void testUploadFileList() throws AmazonServiceException, AmazonClientException, InterruptedException {
 
-		try {
+		String bucket_name = utils.getBucketName(prefix);
+		svc.createBucket(new CreateBucketRequest(bucket_name));
+		String key = "key1";
 
-			String bucket_name = utils.getBucketName(prefix);
-			svc.createBucket(new CreateBucketRequest(bucket_name));
-			String key = "key1";
+		ArrayList<File> files = new ArrayList<File>();
 
-			MultipleFileUpload upl = utils.UploadFileListHLAPI(svc, bucket_name, key);
-			Assert.assertEquals(upl.isDone(), true);
+		String fname1 = "./data/file.mpg";
+		String fname2 = "./data/sample.txt";
+		utils.createFile(fname1, 23 * 1024 * 1024);
+		utils.createFile(fname2, 256 * 1024);
+		files.add(new File(fname1));
+		files.add(new File(fname2));
 
-			ObjectListing listing = svc.listObjects(bucket_name);
-			List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-			while (listing.isTruncated()) {
-				listing = svc.listNextBatchOfObjects(listing);
-				summaries.addAll(listing.getObjectSummaries());
-			}
-			Assert.assertEquals(summaries.size(), 2);
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertEquals(err.getErrorCode(), "400 Bad Request");
+		TransferManager tm = TransferManagerBuilder.standard().withS3Client(svc).build();
+		MultipleFileUpload upl = tm.uploadFileList(bucket_name, key, new File("."), files);
+		upl.waitForCompletion();
+
+		Assert.assertEquals(upl.isDone(), true);
+
+		ObjectListing listing = svc.listObjects(bucket_name);
+		List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+		while (listing.isTruncated()) {
+			listing = svc.listNextBatchOfObjects(listing);
+			summaries.addAll(listing.getObjectSummaries());
 		}
+		Assert.assertEquals(summaries.size(), 2);
 	}
 
 }
