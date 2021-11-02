@@ -878,11 +878,11 @@ public class ObjectTest {
 		try {
                         PutObjectRequest putRequest = new PutObjectRequest(bucket_name, key, datastream, objectMetadata);
 			svc.putObject(putRequest);
-			AssertJUnit.fail("Expected 400 InvalidAccessKeyId");
+			AssertJUnit.fail("Expected 400 InvalidArgument");
 
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getErrorCode(), "InvalidAccessKeyId");
+			AssertJUnit.assertEquals(err.getStatusCode(), 400);
 		}
 	}
 
