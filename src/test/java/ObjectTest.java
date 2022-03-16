@@ -859,6 +859,7 @@ public class ObjectTest {
                 svc.putObject(putRequest);
 
                 String rdata = svc.getObjectAsString(bucket_name, key);
+		S3.logger.debug(String.format("TEST ERROR: d1=<%s> d2=<%s> %n", data, rdata));
                 Assert.assertEquals(rdata, data);
 	}
 
@@ -905,8 +906,12 @@ public class ObjectTest {
 			AssertJUnit.fail("Expected Failure because of no x-amz-server-side-encryption header");
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getErrorMessage(),
-					"Server Side Encryption with KMS managed key requires HTTP header x-amz-server-side-encryption : aws:kms");
+			AssertJUnit.assertEquals("error code", "InvalidArgument",
+				err.getErrorCode());
+			AssertJUnit.assertEquals("status code", 400,
+				err.getStatusCode());
+			AssertJUnit.assertTrue("error message contains kms",
+				err.getErrorMessage().contains("kms"));
 		}
 	}
 
