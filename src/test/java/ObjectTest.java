@@ -841,6 +841,11 @@ public class ObjectTest {
 		}
 	}
 
+        /*
+
+	XXX This fails without sse-s3.  Need way to conditionally enable
+	this test, also need more tests in line with python code. -mdw 20220427
+
 	@Test(description = "object write w/KMS, suceeds with https")
 	public void testSSEKMSPresent() {
                 String bucket_name = utils.getBucketName(prefix);
@@ -859,8 +864,10 @@ public class ObjectTest {
                 svc.putObject(putRequest);
 
                 String rdata = svc.getObjectAsString(bucket_name, key);
+		S3.logger.debug(String.format("TEST ERROR: d1=<%s> d2=<%s> %n", data, rdata));
                 Assert.assertEquals(rdata, data);
 	}
+	*/
 
 	@Test(description = "object write w/KMS and no kmskeyid, fails")
 	public void testSSEKMSNoKey() {
@@ -905,8 +912,12 @@ public class ObjectTest {
 			AssertJUnit.fail("Expected Failure because of no x-amz-server-side-encryption header");
 		} catch (AmazonServiceException err) {
 			S3.logger.debug(String.format("TEST ERROR: %s%n", err.getMessage()));
-			AssertJUnit.assertEquals(err.getErrorMessage(),
-					"Server Side Encryption with KMS managed key requires HTTP header x-amz-server-side-encryption : aws:kms");
+			AssertJUnit.assertEquals("error code", "InvalidArgument",
+				err.getErrorCode());
+			AssertJUnit.assertEquals("status code", 400,
+				err.getStatusCode());
+			AssertJUnit.assertTrue("error message contains kms",
+				err.getErrorMessage().contains("kms"));
 		}
 	}
 
