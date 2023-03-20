@@ -454,26 +454,22 @@ public class ObjectTest {
 	@Test(description = "object create w/negative content length, fails")
 	public void testObjectCreateBadContentlengthNegative() {
 
-		try {
-			String bucket_name = utils.getBucketName(prefix);
-			String key = "key1";
-			String content = "echo lima golf";
-			long contlength = -1;
+    String bucket_name = utils.getBucketName(prefix);
+    String key = "key1";
+    String content = "echo lima golf";
+    long contlength = -1;
 
-			svc.createBucket(new CreateBucketRequest(bucket_name));
+    svc.createBucket(new CreateBucketRequest(bucket_name));
 
-			byte[] contentBytes = content.getBytes(StringUtils.UTF8);
-			InputStream is = new ByteArrayInputStream(contentBytes);
+    byte[] contentBytes = content.getBytes(StringUtils.UTF8);
+    InputStream is = new ByteArrayInputStream(contentBytes);
 
-			ObjectMetadata metadata = new ObjectMetadata();
-			metadata.setHeader("Content-Length", contlength);
+    ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setHeader("Content-Length", contlength);
 
-			svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
-			AssertJUnit.fail("Expected 411 MissingContentLength");
-		} catch (AmazonServiceException err) {
-			AssertJUnit.assertNotSame(err.getLocalizedMessage(), null);
-			AssertJUnit.assertEquals(err.getErrorCode(), "MissingContentLength");
-		}
+    svc.putObject(new PutObjectRequest(bucket_name, key, is, metadata));
+    // following Ceph PR#50235 -- handle old clients with transfer-encoding: chunked
+    // this test PASS condition is 200 (versus 411 previously)
 	}
 
         /*
